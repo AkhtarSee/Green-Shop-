@@ -1,0 +1,3420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Green Shop — Shop & Play</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap');
+
+:root {
+  /* Grocery Mode Colors */
+  --g-bg: #f7f8fa;
+  --g-card: #ffffff;
+  --g-border: rgba(0,0,0,0.07);
+  --g-text: #0f1923;
+  --g-muted: #8a9bb0;
+  --g-primary: #1a9e5c;
+  --g-primary2: #138a4e;
+  --g-accent: #ff6b35;
+  --g-coin: #e8a800;
+  --g-coin2: #f0c040;
+
+  /* P2E Mode Colors */
+  --p-bg: #07090e;
+  --p-card: #0e1118;
+  --p-border: rgba(255,255,255,0.07);
+  --p-text: #eef2ff;
+  --p-muted: rgba(238,242,255,0.45);
+  --p-gold: #f0c040;
+  --p-green: #22d67a;
+  --p-red: #ff4560;
+  --p-blue: #38bdf8;
+
+  --font: 'Plus Jakarta Sans', sans-serif;
+  --head: 'Syne', sans-serif;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+html, body { width:100%; height:100%; overflow:hidden; font-family:var(--font); }
+
+/* ─ SCREENS ─ */
+.screen { position:absolute; inset:0; display:none; flex-direction:column; overflow:hidden; }
+.screen.active { display:flex; }
+
+/* ─ SCROLL ─ */
+.scroll { flex:1; overflow-y:auto; padding-bottom:76px; }
+.scroll::-webkit-scrollbar { display:none; }
+
+/* ─ TOAST ─ */
+#toast {
+  position:fixed; bottom:88px; left:50%; transform:translateX(-50%) translateY(16px);
+  padding:11px 22px; border-radius:30px; font-size:.84rem; font-weight:700;
+  z-index:9999; opacity:0; transition:all .3s; white-space:nowrap; pointer-events:none;
+  box-shadow:0 4px 20px rgba(0,0,0,.25);
+}
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+#toast.g { background:#1a9e5c; color:#fff; }
+#toast.e { background:#ff4560; color:#fff; }
+#toast.i { background:#38bdf8; color:#000; }
+#toast.coin { background:linear-gradient(135deg,#f0c040,#e8a800); color:#000; }
+
+/* ─ CONFETTI ─ */
+#confetti { position:fixed; inset:0; pointer-events:none; z-index:9997; overflow:hidden; }
+.cp { position:absolute; top:-20px; animation:cpF linear forwards; }
+@keyframes cpF { to { transform:translateY(110vh) rotate(900deg); opacity:0; } }
+
+/* ════════════════════════
+   MODE SWITCH BUTTON
+════════════════════════ */
+.mode-fab {
+  position:fixed; bottom:88px; right:16px; z-index:500;
+  width:56px; height:56px; border-radius:50%; border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; font-size:1.5rem;
+  box-shadow:0 6px 24px rgba(0,0,0,.3); transition:all .3s;
+}
+.mode-fab.grocery { background:linear-gradient(135deg,#1a9e5c,#138a4e); }
+.mode-fab.p2e { background:linear-gradient(135deg,#f0c040,#e8a800); }
+
+/* ════════════════════════
+   GROCERY BOTTOM NAV
+════════════════════════ */
+.g-nav {
+  position:fixed; bottom:0; left:0; right:0; z-index:100;
+  background:rgba(255,255,255,0.97); border-top:1px solid var(--g-border);
+  display:flex; padding:8px 0 max(8px, env(safe-area-inset-bottom));
+  backdrop-filter:blur(20px); box-shadow:0 -4px 20px rgba(0,0,0,.06);
+}
+.g-nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 4px; cursor:pointer; transition:.2s; position:relative; }
+.g-nav-icon { font-size:1.3rem; transition:.2s; }
+.g-nav-label { font-size:.58rem; font-weight:600; color:var(--g-muted); transition:.2s; }
+.g-nav-item.active .g-nav-label { color:var(--g-primary); }
+.g-nav-item.active .g-nav-icon { filter:drop-shadow(0 0 4px rgba(26,158,92,.4)); }
+.cart-dot { position:absolute; top:3px; right:calc(50% - 18px); background:var(--g-accent); color:#fff; font-size:.52rem; font-weight:800; padding:2px 5px; border-radius:10px; min-width:16px; text-align:center; }
+
+/* ════════════════════════
+   P2E BOTTOM NAV
+════════════════════════ */
+.p-nav {
+  position:fixed; bottom:0; left:0; right:0; z-index:100;
+  background:rgba(7,9,14,0.97); border-top:1px solid var(--p-border);
+  display:flex; padding:8px 0 max(8px, env(safe-area-inset-bottom));
+  backdrop-filter:blur(20px);
+}
+.p-nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 4px; cursor:pointer; transition:.2s; }
+.p-nav-icon { font-size:1.3rem; transition:.2s; }
+.p-nav-label { font-size:.58rem; font-weight:600; color:var(--p-muted); transition:.2s; }
+.p-nav-item.active .p-nav-label { color:var(--p-gold); }
+
+/* ════════════════════════
+   GROCERY HEADER
+════════════════════════ */
+.g-header {
+  background:#fff; padding:14px 18px 10px; position:sticky; top:0; z-index:50;
+  border-bottom:1px solid var(--g-border); box-shadow:0 2px 12px rgba(0,0,0,.04);
+}
+.g-header-top { display:flex; align-items:center; justify-content:space-between; }
+.g-logo { font-family:var(--head); font-size:1.35rem; color:var(--g-primary); }
+.g-logo span { color:var(--g-accent); }
+.coin-strip {
+  display:flex; align-items:center; gap:6px;
+  background:linear-gradient(135deg,rgba(232,168,0,.1),rgba(240,192,64,.06));
+  border:1px solid rgba(232,168,0,.25); border-radius:20px; padding:6px 12px;
+  cursor:pointer;
+}
+.coin-strip-val { font-family:var(--head); font-size:.95rem; color:var(--g-coin); }
+.coin-strip-lbl { font-size:.6rem; color:var(--g-muted); }
+.g-search {
+  display:flex; align-items:center; gap:8px; margin-top:10px;
+  background:var(--g-bg); border:1px solid var(--g-border); border-radius:var(--radius-sm);
+  padding:10px 14px;
+}
+.g-search input { flex:1; background:none; border:none; outline:none; font-family:var(--font); font-size:.88rem; color:var(--g-text); }
+.g-search input::placeholder { color:var(--g-muted); }
+
+/* ════════════════════════
+   GROCERY HOME
+════════════════════════ */
+#screen-ghome { background:var(--g-bg); }
+
+.g-hero {
+  margin:14px 16px; border-radius:20px; overflow:hidden; position:relative;
+  background:linear-gradient(135deg,#0d3d22,#1a6e40); padding:20px;
+  box-shadow:0 8px 30px rgba(26,158,92,.25);
+}
+.g-hero::after { content:''; position:absolute; right:-20px; top:-20px; font-size:100px; opacity:.07; pointer-events:none; }
+.g-hero-title { font-family:var(--head); font-size:1.45rem; color:#fff; }
+.g-hero-sub { font-size:.78rem; color:rgba(255,255,255,.6); margin-top:4px; }
+.cashback-badge {
+  display:inline-flex; align-items:center; gap:6px; margin-top:12px;
+  background:rgba(240,192,64,.15); border:1px solid rgba(240,192,64,.3);
+  border-radius:20px; padding:7px 14px;
+}
+.cashback-badge span { font-size:.8rem; font-weight:700; color:var(--g-coin2); }
+.g-hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; }
+.g-hstat { background:rgba(255,255,255,.08); border-radius:10px; padding:10px; text-align:center; }
+.g-hstat-v { font-family:var(--head); font-size:1.2rem; color:#fff; }
+.g-hstat-l { font-size:.6rem; color:rgba(255,255,255,.5); margin-top:2px; }
+
+/* Category scroll */
+.cat-row { display:flex; gap:8px; padding:0 16px; overflow-x:auto; margin:12px 0 4px; }
+.cat-row::-webkit-scrollbar { display:none; }
+.cat-chip { display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 14px; background:#fff; border:1.5px solid var(--g-border); border-radius:14px; cursor:pointer; transition:.18s; flex-shrink:0; min-width:60px; }
+.cat-chip:active { transform:scale(.94); }
+.cat-chip.active { border-color:var(--g-primary); background:rgba(26,158,92,.06); }
+.cat-emoji { font-size:1.4rem; }
+.cat-label { font-size:.6rem; font-weight:700; color:var(--g-muted); white-space:nowrap; }
+.cat-chip.active .cat-label { color:var(--g-primary); }
+
+/* Section header */
+.sec-head { display:flex; align-items:center; justify-content:space-between; padding:0 16px; margin:16px 0 10px; }
+.sec-title { font-family:var(--head); font-size:1rem; color:var(--g-text); }
+.sec-link { font-size:.75rem; font-weight:700; color:var(--g-primary); }
+
+/* Product grid */
+.prod-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 16px; }
+.prod-card { background:#fff; border-radius:var(--radius); overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.06); transition:.18s; }
+.prod-card:active { transform:scale(.97); }
+.prod-img-wrap { height:100px; display:flex; align-items:center; justify-content:center; font-size:3.2rem; background:var(--g-bg); position:relative; }
+.cashback-tag { position:absolute; top:6px; left:6px; background:linear-gradient(135deg,#f0c040,#e8a800); border-radius:6px; padding:3px 7px; font-size:.6rem; font-weight:800; color:#000; }
+.fresh-tag { position:absolute; top:6px; right:6px; background:rgba(26,158,92,.9); border-radius:6px; padding:3px 7px; font-size:.6rem; font-weight:700; color:#fff; }
+.prod-body { padding:10px; }
+.prod-name { font-size:.82rem; font-weight:700; color:var(--g-text); }
+.prod-unit { font-size:.68rem; color:var(--g-muted); margin-top:2px; }
+.prod-footer { display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
+.prod-price { font-family:var(--head); font-size:1rem; color:var(--g-text); }
+.prod-cb { font-size:.65rem; color:var(--g-coin); font-weight:700; margin-top:2px; }
+.add-btn-g { width:32px; height:32px; border-radius:8px; border:none; cursor:pointer; background:linear-gradient(135deg,var(--g-primary),var(--g-primary2)); color:#fff; font-size:1.2rem; display:flex; align-items:center; justify-content:center; transition:.15s; }
+.add-btn-g:active { transform:scale(.88); }
+
+/* Offer banner */
+.offer-scroll { display:flex; gap:10px; padding:0 16px; overflow-x:auto; margin-bottom:4px; }
+.offer-scroll::-webkit-scrollbar { display:none; }
+.offer-card { min-width:220px; border-radius:14px; padding:14px; flex-shrink:0; }
+.offer-card:nth-child(1) { background:linear-gradient(135deg,#1a3a5c,#2460a0); }
+.offer-card:nth-child(2) { background:linear-gradient(135deg,#3a1a1a,#a02424); }
+.offer-card:nth-child(3) { background:linear-gradient(135deg,#1a3a2a,#24a060); }
+.offer-title { font-family:var(--head); font-size:1rem; color:#fff; }
+.offer-sub { font-size:.72rem; color:rgba(255,255,255,.6); margin-top:3px; }
+.offer-badge { display:inline-block; margin-top:8px; background:rgba(255,255,255,.15); border-radius:6px; padding:4px 10px; font-size:.7rem; font-weight:700; color:#fff; }
+
+/* ════════════════════════
+   GROCERY CART
+════════════════════════ */
+#screen-gcart { background:var(--g-bg); }
+.g-cart-header { background:#fff; padding:14px 18px; border-bottom:1px solid var(--g-border); font-family:var(--head); font-size:1.2rem; color:var(--g-text); display:flex; align-items:center; justify-content:space-between; }
+
+.cart-item-g { background:#fff; border-radius:var(--radius); margin:0 16px 10px; padding:14px; display:flex; gap:12px; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+.ci-emoji { font-size:2.2rem; width:50px; height:50px; background:var(--g-bg); border-radius:10px; display:flex; align-items:center; justify-content:center; }
+.ci-info { flex:1; }
+.ci-name { font-size:.85rem; font-weight:700; color:var(--g-text); }
+.ci-price { font-size:.75rem; color:var(--g-muted); margin-top:2px; }
+.ci-cb { font-size:.7rem; color:var(--g-coin); font-weight:700; margin-top:1px; }
+.qty-row { display:flex; align-items:center; gap:8px; }
+.qty-b { width:28px; height:28px; border-radius:8px; border:1.5px solid var(--g-border); background:#fff; color:var(--g-text); cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; font-weight:700; }
+.qty-v { font-weight:800; font-size:.95rem; min-width:20px; text-align:center; color:var(--g-text); }
+
+.g-summary { background:#fff; border-radius:var(--radius); margin:0 16px 12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+.sum-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--g-border); font-size:.85rem; color:var(--g-text); }
+.sum-row:last-child { border-bottom:none; font-weight:800; font-size:.95rem; }
+.sum-coin-earned { color:var(--g-coin); font-weight:700; }
+
+.coin-redeem { background:linear-gradient(135deg,rgba(240,192,64,.08),rgba(232,168,0,.04)); border:1px solid rgba(240,192,64,.25); border-radius:var(--radius); margin:0 16px 12px; padding:16px; }
+.cr-title { font-size:.88rem; font-weight:700; color:var(--g-coin); margin-bottom:4px; }
+.cr-sub { font-size:.72rem; color:var(--g-muted); margin-bottom:12px; }
+.cr-input-row { display:flex; align-items:center; gap:10px; }
+.cr-input { flex:1; padding:10px 14px; border:1.5px solid rgba(240,192,64,.3); border-radius:var(--radius-sm); background:#fff; font-family:var(--font); font-size:.88rem; color:var(--g-text); outline:none; }
+.cr-apply { padding:10px 16px; border:none; border-radius:var(--radius-sm); background:linear-gradient(135deg,#f0c040,#e8a800); color:#000; font-weight:800; cursor:pointer; font-family:var(--font); font-size:.82rem; }
+
+.checkout-bar { padding:0 16px 12px; }
+.checkout-btn { width:100%; padding:17px; border:none; border-radius:var(--radius); background:linear-gradient(135deg,var(--g-primary),var(--g-primary2)); color:#fff; font-family:var(--head); font-size:1.1rem; cursor:pointer; transition:.2s; box-shadow:0 6px 20px rgba(26,158,92,.35); }
+.checkout-btn:active { transform:scale(.98); }
+
+/* ════════════════════════
+   P2E HEADER
+════════════════════════ */
+.p-header { background:var(--p-bg); padding:14px 18px 10px; position:sticky; top:0; z-index:50; border-bottom:1px solid var(--p-border); }
+.p-header-row { display:flex; align-items:center; justify-content:space-between; }
+.p-logo { font-family:var(--head); font-size:1.3rem; color:var(--p-gold); }
+.p-logo span { color:var(--p-green); }
+.p-coin-pill { display:flex; align-items:center; gap:6px; background:rgba(240,192,64,.1); border:1px solid rgba(240,192,64,.25); border-radius:20px; padding:6px 12px; }
+.p-coin-v { font-family:var(--head); font-size:.95rem; color:var(--p-gold); }
+
+/* P2E Home */
+#screen-phome { background:var(--p-bg); }
+
+.p-wallet { margin:14px 16px; border-radius:20px; padding:20px; background:linear-gradient(135deg,#130f00,#1e1800); border:1px solid rgba(240,192,64,.2); position:relative; overflow:hidden; }
+.p-wallet::before { content:'🪙'; position:absolute; right:-10px; top:-10px; font-size:80px; opacity:.06; }
+.pw-label { font-size:.65rem; font-weight:700; letter-spacing:3px; color:var(--p-muted); }
+.pw-amount { font-family:var(--head); font-size:2.6rem; color:var(--p-gold); line-height:1.1; margin-top:2px; }
+.pw-inr { font-size:.8rem; color:var(--p-muted); margin-top:4px; }
+.pw-rate { display:inline-flex; align-items:center; gap:5px; margin-top:10px; background:rgba(240,192,64,.08); border:1px solid rgba(240,192,64,.2); border-radius:8px; padding:5px 12px; font-size:.72rem; color:var(--p-gold); font-weight:700; }
+.pw-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+
+/* P card */
+.p-card { background:var(--p-card); border:1px solid var(--p-border); border-radius:var(--radius); padding:16px; margin:0 16px 12px; }
+.p-sec-head { font-size:.62rem; font-weight:700; letter-spacing:3px; color:var(--p-muted); text-transform:uppercase; margin:16px 18px 10px; }
+
+/* Earn methods */
+.earn-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.earn-box { background:rgba(255,255,255,.03); border:1px solid var(--p-border); border-radius:var(--radius-sm); padding:14px; cursor:pointer; transition:.2s; }
+.earn-box:active { transform:scale(.96); background:rgba(255,255,255,.06); }
+.earn-icon-big { font-size:1.8rem; margin-bottom:7px; }
+.earn-title { font-size:.82rem; font-weight:700; color:var(--p-text); }
+.earn-coins-val { font-family:var(--head); font-size:.95rem; color:var(--p-gold); margin-top:4px; }
+.earn-sub { font-size:.68rem; color:var(--p-muted); margin-top:2px; }
+
+/* Referral */
+.ref-card { background:linear-gradient(135deg,rgba(34,214,122,.07),rgba(34,214,122,.03)); border:1px solid rgba(34,214,122,.2); border-radius:var(--radius); padding:18px; margin:0 16px 12px; }
+.ref-title { font-family:var(--head); font-size:1.1rem; color:var(--p-green); margin-bottom:4px; }
+.ref-sub { font-size:.78rem; color:var(--p-muted); margin-bottom:14px; line-height:1.6; }
+.ref-code-box { background:rgba(255,255,255,.04); border:1px solid rgba(34,214,122,.2); border-radius:var(--radius-sm); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.ref-code { font-family:var(--head); font-size:1.2rem; color:var(--p-green); letter-spacing:2px; }
+.copy-btn { background:rgba(34,214,122,.15); border:1px solid rgba(34,214,122,.3); border-radius:7px; padding:6px 12px; color:var(--p-green); font-size:.75rem; font-weight:700; cursor:pointer; }
+.ref-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.ref-stat { background:rgba(255,255,255,.03); border-radius:var(--radius-sm); padding:10px; text-align:center; }
+.ref-stat-v { font-family:var(--head); font-size:1.2rem; color:var(--p-gold); }
+.ref-stat-l { font-size:.6rem; color:var(--p-muted); margin-top:2px; }
+
+/* Activity */
+.act-row { display:flex; align-items:center; gap:12px; padding:12px; background:rgba(255,255,255,.03); border:1px solid var(--p-border); border-radius:var(--radius-sm); margin-bottom:8px; }
+.act-ic { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.05); display:flex; align-items:center; justify-content:center; font-size:1.2rem; }
+.act-inf { flex:1; }
+.act-t { font-size:.82rem; font-weight:600; color:var(--p-text); }
+.act-d { font-size:.65rem; color:var(--p-muted); margin-top:2px; }
+.act-c { font-family:var(--head); font-size:.88rem; }
+.act-plus { color:var(--p-green); }
+.act-minus { color:var(--p-red); }
+
+/* P2E Race */
+#screen-race { background:var(--p-bg); }
+.race-header { background:var(--p-bg); padding:12px 16px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--p-border); position:sticky; top:0; z-index:50; }
+.race-header-title { font-family:var(--head); font-size:1.1rem; color:var(--p-gold); flex:1; }
+
+/* P2E Game Store */
+#screen-gstore { background:var(--p-bg); }
+.gs-tabs { display:flex; gap:0; margin:0 16px 14px; background:var(--p-card); border-radius:var(--radius-sm); padding:4px; border:1px solid var(--p-border); }
+.gs-tab { flex:1; padding:9px 4px; text-align:center; border-radius:8px; cursor:pointer; font-size:.72rem; font-weight:700; transition:.2s; color:var(--p-muted); }
+.gs-tab.active { background:rgba(240,192,64,.12); color:var(--p-gold); }
+.gs-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:0 16px; }
+.gs-item { background:var(--p-card); border:1px solid var(--p-border); border-radius:var(--radius); padding:16px; text-align:center; transition:.2s; }
+.gs-item:active { transform:scale(.97); }
+.gs-item.owned { border-color:rgba(34,214,122,.3); background:rgba(34,214,122,.04); }
+.gs-item.equipped { border-color:rgba(240,192,64,.5); background:rgba(240,192,64,.06); }
+.gs-emoji { font-size:2.6rem; display:block; margin-bottom:8px; }
+.gs-name { font-size:.82rem; font-weight:700; color:var(--p-text); margin-bottom:3px; }
+.gs-desc { font-size:.67rem; color:var(--p-muted); margin-bottom:10px; line-height:1.5; }
+.gs-cost { font-family:var(--head); font-size:.95rem; color:var(--p-gold); margin-bottom:8px; }
+
+/* Buttons */
+.btn { display:flex; align-items:center; justify-content:center; gap:6px; border:none; border-radius:var(--radius-sm); cursor:pointer; font-family:var(--font); font-weight:700; transition:.18s; }
+.btn:active { transform:scale(.97); }
+.btn-green-g { background:linear-gradient(135deg,var(--g-primary),var(--g-primary2)); color:#fff; }
+.btn-gold-p { background:linear-gradient(135deg,#f0c040,#e8a800); color:#000; }
+.btn-gp { background:linear-gradient(135deg,var(--p-green),#18a85e); color:#fff; }
+.btn-ghost-p { background:rgba(255,255,255,.07); border:1px solid var(--p-border); color:var(--p-text); }
+.btn-ghost-g { background:rgba(255,255,255,.6); border:1.5px solid var(--g-border); color:var(--g-text); }
+.btn-lg { padding:15px 20px; font-size:.95rem; width:100%; border-radius:var(--radius); }
+.btn-md { padding:11px 16px; font-size:.84rem; }
+.btn-sm { padding:8px 14px; font-size:.76rem; }
+
+/* ════════════════════════
+   ADMIN PANEL
+════════════════════════ */
+#screen-admin { background:#0d1117; }
+.admin-header { background:#0d1117; padding:14px 18px; border-bottom:1px solid rgba(255,255,255,.07); display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+.admin-logo { font-family:var(--head); font-size:1.2rem; color:#e11d48; }
+.admin-badge { background:rgba(225,29,72,.15); border:1px solid rgba(225,29,72,.3); border-radius:20px; padding:5px 12px; font-size:.68rem; font-weight:700; color:#e11d48; }
+
+.admin-tabs { display:flex; gap:0; margin:0 16px 14px; background:rgba(255,255,255,.04); border-radius:var(--radius-sm); padding:4px; border:1px solid rgba(255,255,255,.07); overflow-x:auto; }
+.admin-tabs::-webkit-scrollbar { display:none; }
+.admin-tab { flex-shrink:0; padding:9px 14px; text-align:center; border-radius:8px; cursor:pointer; font-size:.73rem; font-weight:700; transition:.2s; color:rgba(255,255,255,.4); white-space:nowrap; }
+.admin-tab.active { background:rgba(225,29,72,.15); color:#e11d48; }
+
+.admin-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 16px 14px; }
+.admin-stat { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); border-radius:var(--radius); padding:16px; }
+.ast-icon { font-size:1.6rem; margin-bottom:8px; }
+.ast-val { font-family:var(--head); font-size:1.6rem; color:#fff; line-height:1; }
+.ast-lbl { font-size:.65rem; color:rgba(255,255,255,.4); margin-top:4px; letter-spacing:2px; }
+.ast-change { font-size:.72rem; margin-top:4px; font-weight:700; }
+.ast-up { color:#22d67a; }
+.ast-down { color:#ff4560; }
+
+.admin-card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); border-radius:var(--radius); padding:16px; margin:0 16px 12px; }
+.admin-card-title { font-size:.75rem; font-weight:700; letter-spacing:2px; color:rgba(255,255,255,.4); margin-bottom:12px; text-transform:uppercase; }
+
+.admin-prod-row { display:flex; align-items:center; gap:10px; padding:10px; background:rgba(255,255,255,.03); border-radius:var(--radius-sm); margin-bottom:8px; }
+.apr-emoji { font-size:1.6rem; width:38px; text-align:center; }
+.apr-info { flex:1; }
+.apr-name { font-size:.82rem; font-weight:700; color:#eef2ff; }
+.apr-price { font-size:.72rem; color:rgba(238,242,255,.4); margin-top:2px; }
+.apr-actions { display:flex; gap:6px; }
+.apr-btn { padding:6px 10px; border-radius:7px; border:none; cursor:pointer; font-size:.72rem; font-weight:700; }
+.apr-edit { background:rgba(56,189,248,.15); color:#38bdf8; }
+.apr-del { background:rgba(255,69,96,.15); color:#ff4560; }
+
+.admin-order-row { display:flex; align-items:center; gap:10px; padding:10px; background:rgba(255,255,255,.03); border-radius:var(--radius-sm); margin-bottom:8px; }
+.aor-id { font-family:var(--head); font-size:.8rem; color:#eef2ff; }
+.aor-info { flex:1; }
+.aor-user { font-size:.78rem; color:rgba(238,242,255,.6); }
+.aor-amount { font-size:.72rem; color:#22d67a; font-weight:700; }
+.status-pill { padding:4px 10px; border-radius:20px; font-size:.65rem; font-weight:800; }
+.sp-delivered { background:rgba(34,214,122,.12); color:#22d67a; }
+.sp-pending { background:rgba(255,165,0,.12); color:#ffa500; }
+.sp-cancelled { background:rgba(255,69,96,.12); color:#ff4560; }
+
+.coin-setting-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+.coin-setting-row:last-child { border-bottom:none; }
+.csr-label { font-size:.85rem; color:#eef2ff; font-weight:600; }
+.csr-sub { font-size:.68rem; color:rgba(238,242,255,.4); margin-top:2px; }
+.csr-val { display:flex; align-items:center; gap:8px; }
+.csr-input { width:80px; padding:7px 10px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:8px; color:#f0c040; font-family:var(--head); font-size:.9rem; text-align:center; outline:none; }
+.csr-unit { font-size:.72rem; color:rgba(238,242,255,.4); }
+.save-btn-admin { width:100%; padding:14px; border:none; border-radius:var(--radius); background:linear-gradient(135deg,#e11d48,#9f1239); color:#fff; font-family:var(--head); font-size:1rem; cursor:pointer; margin-top:12px; letter-spacing:1px; }
+
+.chart-bar-wrap { margin-top:10px; }
+.chart-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.chart-label { font-size:.68rem; color:rgba(238,242,255,.5); width:28px; }
+.chart-bar-bg { flex:1; height:22px; background:rgba(255,255,255,.04); border-radius:4px; overflow:hidden; }
+.chart-bar-fill { height:100%; border-radius:4px; display:flex; align-items:center; padding-left:8px; font-size:.65rem; font-weight:700; color:#000; transition:width 1s ease; }
+.chart-val { font-size:.68rem; color:rgba(238,242,255,.5); width:40px; text-align:right; }
+
+/* Add product form */
+.admin-form-row { margin-bottom:10px; }
+.admin-label { font-size:.72rem; font-weight:700; color:rgba(238,242,255,.5); letter-spacing:1px; margin-bottom:5px; display:block; }
+.admin-input { width:100%; padding:11px 14px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:var(--radius-sm); color:#eef2ff; font-family:var(--font); font-size:.88rem; outline:none; }
+.admin-input:focus { border-color:rgba(225,29,72,.4); }
+.admin-select { width:100%; padding:11px 14px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:var(--radius-sm); color:#eef2ff; font-family:var(--font); font-size:.88rem; outline:none; }
+.admin-2col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+/* ════════════════════════
+   DUKANDAAR REFERRAL
+════════════════════════ */
+.dk-screen { background:linear-gradient(160deg,#07090e,#0a0f18); }
+.dk-hero { margin:14px 16px; border-radius:22px; padding:22px 18px; background:linear-gradient(135deg,#12080e,#2a1020); border:1px solid rgba(192,64,240,.2); position:relative; overflow:hidden; }
+.dk-hero::before { content:'🏪'; position:absolute; right:-5px; top:-10px; font-size:90px; opacity:.06; }
+.dk-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(192,64,240,.12); border:1px solid rgba(192,64,240,.3); border-radius:20px; padding:5px 14px; font-size:.72rem; font-weight:800; color:#c040f0; margin-bottom:10px; }
+.dk-title { font-family:var(--head); font-size:1.5rem; color:#fff; line-height:1.2; }
+.dk-sub { font-size:.78rem; color:rgba(255,255,255,.5); margin-top:6px; line-height:1.6; }
+.dk-vs-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 16px; }
+.dk-vs-card { border-radius:var(--radius); padding:16px; border:1px solid; }
+.dk-vs-user { background:rgba(34,214,122,.06); border-color:rgba(34,214,122,.2); }
+.dk-vs-shop { background:rgba(192,64,240,.06); border-color:rgba(192,64,240,.25); }
+.dk-vs-icon { font-size:2rem; margin-bottom:8px; }
+.dk-vs-title { font-size:.78rem; font-weight:800; margin-bottom:10px; }
+.dk-vs-item { display:flex; justify-content:space-between; font-size:.72rem; padding:5px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+.dk-vs-item:last-child { border-bottom:none; }
+.dk-vs-key { color:rgba(255,255,255,.5); }
+.dk-vs-val { font-weight:700; }
+.user-col { color:#22d67a; }
+.shop-col { color:#c040f0; }
+
+.dk-code-box { margin:0 16px 12px; background:rgba(192,64,240,.06); border:1.5px solid rgba(192,64,240,.25); border-radius:var(--radius); padding:18px; }
+.dk-code-label { font-size:.65rem; letter-spacing:3px; color:rgba(255,255,255,.4); margin-bottom:8px; }
+.dk-code-row { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.dk-code-val { font-family:var(--head); font-size:1.8rem; color:#c040f0; letter-spacing:4px; flex:1; }
+.dk-copy-btn { background:rgba(192,64,240,.2); border:1px solid rgba(192,64,240,.35); border-radius:10px; padding:10px 16px; color:#c040f0; font-weight:800; cursor:pointer; font-size:.82rem; }
+.dk-tier-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.dk-tier { background:rgba(255,255,255,.03); border-radius:10px; padding:12px 8px; text-align:center; border:1px solid rgba(255,255,255,.06); }
+.dk-tier.active-tier { border-color:rgba(192,64,240,.4); background:rgba(192,64,240,.08); }
+.dk-tier-icon { font-size:1.4rem; margin-bottom:4px; }
+.dk-tier-name { font-size:.65rem; color:rgba(255,255,255,.5); }
+.dk-tier-coins { font-family:var(--head); font-size:.95rem; color:#c040f0; margin-top:3px; }
+.dk-tier-cond { font-size:.6rem; color:rgba(255,255,255,.35); margin-top:2px; }
+
+.dk-stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:0 16px 12px; }
+.dk-stat { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); border-radius:var(--radius-sm); padding:14px; text-align:center; }
+.dk-stat-v { font-family:var(--head); font-size:1.4rem; color:#c040f0; }
+.dk-stat-l { font-size:.6rem; color:rgba(255,255,255,.4); letter-spacing:2px; margin-top:3px; }
+
+.dk-referred-list { margin:0 16px; }
+.dk-ref-row { display:flex; align-items:center; gap:10px; padding:12px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:var(--radius-sm); margin-bottom:8px; }
+.dk-ref-avatar { width:38px; height:38px; border-radius:50%; background:rgba(192,64,240,.12); border:1px solid rgba(192,64,240,.25); display:flex; align-items:center; justify-content:center; font-size:1.2rem; }
+.dk-ref-info { flex:1; }
+.dk-ref-name { font-size:.82rem; font-weight:700; color:#eef2ff; }
+.dk-ref-orders { font-size:.68rem; color:rgba(238,242,255,.45); margin-top:2px; }
+.dk-ref-earn { font-family:var(--head); font-size:.9rem; color:#c040f0; }
+
+/* Race canvas area */
+#raceWrap { flex:1; position:relative; overflow:hidden; }
+#raceCanvas { position:absolute; inset:0; width:100%; height:100%; }
+
+/* Race HUD */
+.r-hud { position:absolute; top:0; left:0; right:0; z-index:20; background:linear-gradient(180deg,rgba(0,0,0,.72),transparent); padding:12px 16px 24px; display:flex; justify-content:space-between; align-items:center; }
+.r-hud-stat { text-align:center; }
+.r-hud-v { font-family:var(--head); font-size:1.5rem; line-height:1; }
+.r-hud-l { font-size:.52rem; color:rgba(255,255,255,.45); letter-spacing:2px; margin-top:2px; }
+.r-hud-center { flex:1; margin:0 12px; }
+.r-prog-bar { height:5px; background:rgba(255,255,255,.12); border-radius:3px; overflow:hidden; }
+.r-prog-fill { height:100%; background:linear-gradient(90deg,var(--p-green),var(--p-gold)); border-radius:3px; transition:width .5s; }
+.r-prog-lbl { font-size:.58rem; color:rgba(255,255,255,.35); letter-spacing:2px; text-align:center; margin-top:4px; }
+.r-rank { position:absolute; right:12px; bottom:120px; z-index:20; background:rgba(0,0,0,.65); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:10px 14px; text-align:center; }
+.r-rank-v { font-family:var(--head); font-size:2rem; line-height:1; }
+.r-boost { position:absolute; bottom:108px; left:50%; transform:translateX(-50%); z-index:20; width:150px; text-align:center; }
+.r-boost-bar { height:7px; background:rgba(255,255,255,.1); border-radius:4px; overflow:hidden; }
+.r-boost-fill { height:100%; background:linear-gradient(90deg,#ff6b35,#ffd700); border-radius:4px; transition:width .2s; }
+.r-boost-lbl { font-size:.58rem; color:rgba(255,255,255,.4); letter-spacing:2px; margin-top:3px; }
+.r-mini-lb { position:absolute; top:70px; right:10px; z-index:20; background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.07); border-radius:10px; padding:8px 12px; min-width:130px; }
+.r-ctrl { position:absolute; bottom:14px; left:0; right:0; z-index:20; display:flex; justify-content:space-between; padding:0 18px; }
+.r-btn { width:70px; height:70px; border-radius:50%; background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; font-size:1.7rem; cursor:pointer; user-select:none; }
+.r-btn:active { background:rgba(255,255,255,.2); }
+.r-btn-boost { background:rgba(255,165,0,.15); border-color:rgba(255,165,0,.35); }
+.r-finish { position:absolute; inset:0; z-index:30; background:rgba(0,0,0,.75); display:none; align-items:center; justify-content:center; }
+.r-finish-card { background:var(--p-card); border:1px solid rgba(240,192,64,.3); border-radius:24px; padding:28px 22px; width:85%; max-width:320px; text-align:center; }
+
+/* Lobby screen */
+#screen-lobby { background:var(--p-bg); }
+.lobby-wrap { flex:1; overflow-y:auto; padding:16px; padding-bottom:80px; }
+.lobby-players { display:grid; grid-template-columns:repeat(auto-fill,minmax(60px,1fr)); gap:7px; background:rgba(255,255,255,.03); border:1px solid var(--p-border); border-radius:var(--radius); padding:12px; max-height:280px; overflow-y:auto; margin-bottom:12px; }
+.lobby-players::-webkit-scrollbar { width:3px; }
+.lobby-players::-webkit-scrollbar-thumb { background:rgba(255,255,255,.12); border-radius:2px; }
+.l-chip { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:9px; padding:7px 4px; text-align:center; font-size:.58rem; color:rgba(255,255,255,.55); animation:chipPop .2s ease; }
+.l-chip.me { border-color:var(--p-gold); background:rgba(240,192,64,.08); color:var(--p-gold); font-weight:800; }
+.l-chip-e { font-size:1.3rem; display:block; margin-bottom:2px; }
+@keyframes chipPop { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+
+/* Ads screen */
+#screen-ads { background:linear-gradient(160deg,#07090e,#0d1220); align-items:center; justify-content:center; padding:20px; }
+.ad-wrap { width:100%; max-width:400px; }
+.ad-card2 { background:rgba(255,255,255,.04); border:1.5px solid rgba(240,192,64,.2); border-radius:22px; padding:36px 24px; text-align:center; margin-bottom:20px; }
+.ad-big-icon { font-size:4.5rem; display:block; animation:adRock 1.2s ease infinite; }
+@keyframes adRock { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
+.ad-brand-name { font-family:var(--head); font-size:1.8rem; color:var(--p-gold); margin:12px 0 5px; }
+.ad-desc2 { font-size:.82rem; color:var(--p-muted); line-height:1.6; }
+.ad-num { font-family:var(--head); font-size:5rem; color:var(--p-gold); line-height:1; margin:16px 0 3px; filter:drop-shadow(0 0 20px rgba(240,192,64,.5)); }
+.ad-pbar2 { width:100%; height:6px; background:rgba(255,255,255,.08); border-radius:3px; overflow:hidden; margin-top:14px; }
+.ad-pbar2-fill { height:100%; background:linear-gradient(90deg,var(--p-gold),var(--p-red)); border-radius:3px; transition:width 1s linear; }
+.ad-dots2 { display:flex; justify-content:center; gap:8px; margin:14px 0; }
+.ad-d { width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,.15); transition:.3s; }
+.ad-d.act { background:var(--p-gold); transform:scale(1.3); }
+.ad-d.dn { background:var(--p-green); }
+
+/* Profile P2E */
+#screen-pprofile { background:var(--p-bg); }
+.p-profile-hero { margin:14px 16px; border-radius:20px; padding:22px 18px; background:linear-gradient(135deg,#0f1a10,#1a2e1c); border:1px solid rgba(34,214,122,.12); text-align:center; }
+.p-ava { font-size:3.8rem; display:block; margin-bottom:10px; }
+.p-uname { font-family:var(--head); font-size:1.4rem; }
+.p-utag { font-size:.75rem; color:var(--p-muted); margin-top:4px; }
+.p-stats3 { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:16px; }
+.p3-box { background:rgba(255,255,255,.04); border-radius:10px; padding:12px 6px; text-align:center; }
+.p3-v { font-family:var(--head); font-size:1.2rem; color:var(--p-gold); }
+.p3-l { font-size:.58rem; color:var(--p-muted); letter-spacing:2px; margin-top:3px; }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+<div id="confetti"></div>
+
+<!-- MODE FAB -->
+<div class="mode-fab grocery" id="modeFab" onclick="toggleMode()" title="Switch Mode">🎮</div>
+
+<!-- ════════════ GROCERY NAV ════════════ -->
+<div class="g-nav" id="gNav">
+  <div class="g-nav-item active" id="gn-home" onclick="gNav('home')"><div class="g-nav-icon">🏠</div><div class="g-nav-label">Home</div></div>
+  <div class="g-nav-item" id="gn-store" onclick="gNav('store')"><div class="g-nav-icon">🛒</div><div class="g-nav-label">Shop</div></div>
+  <div class="g-nav-item" id="gn-cart" onclick="gNav('cart')">
+    <div class="g-nav-icon">🧺</div><div class="g-nav-label">Cart</div>
+    <div class="cart-dot" id="cartDot" style="display:none">0</div>
+  </div>
+  <div class="g-nav-item" id="gn-orders" onclick="gNav('orders')"><div class="g-nav-icon">📦</div><div class="g-nav-label">Orders</div></div>
+  <div class="g-nav-item" id="gn-admin" onclick="openAdmin()"><div class="g-nav-icon">⚙️</div><div class="g-nav-label">Admin</div></div>
+</div>
+
+<!-- ════════════ P2E NAV ════════════ -->
+<div class="p-nav" id="pNav" style="display:none">
+  <div class="p-nav-item active" id="pn-home" onclick="pNav('home')"><div class="p-nav-icon">🏠</div><div class="p-nav-label">Home</div></div>
+  <div class="p-nav-item" id="pn-race" onclick="pNav('race')"><div class="p-nav-icon">🎯</div><div class="p-nav-label">Battle</div></div>
+  <div class="p-nav-item" id="pn-dk" onclick="pNav('dk')"><div class="p-nav-icon">🏪</div><div class="p-nav-label">Dukaan</div></div>
+  <div class="p-nav-item" id="pn-gstore" onclick="pNav('gstore')"><div class="p-nav-icon">🎮</div><div class="p-nav-label">Items</div></div>
+  <div class="p-nav-item" id="pn-pprofile" onclick="pNav('pprofile')"><div class="p-nav-icon">👤</div><div class="p-nav-label">Profile</div></div>
+</div>
+
+<!-- ══════════════════════════════════
+     GROCERY SCREENS
+══════════════════════════════════ -->
+
+<!-- G-HOME -->
+<div class="screen active" id="screen-ghome">
+  <div class="g-header">
+    <div class="g-header-top">
+      <div><div class="g-logo">Green<span>Shop</span></div><div style="font-size:.68rem;color:var(--g-muted);margin-top:1px">📍 Giridih, Jharkhand</div></div>
+      <div class="coin-strip" onclick="gNav('gprofile')">
+        <span style="font-size:1rem">🪙</span>
+        <div><div class="coin-strip-val" id="gCoinDisp">1,200</div><div class="coin-strip-lbl">coins</div></div>
+      </div>
+    </div>
+    <div class="g-search"><span>🔍</span><input type="text" placeholder="Search vegetables, fruits, chicken..." id="gSearch" oninput="renderProducts()"></div>
+  </div>
+  <div class="scroll">
+    <div class="g-hero">
+      <div class="g-hero-title">Fresh Groceries 🥬</div>
+      <div class="g-hero-sub">Delivered in 30 minutes • Free delivery above ₹299</div>
+      <div class="cashback-badge">🪙 <span>Earn Coins on every purchase!</span></div>
+      <div class="g-hero-stats">
+        <div class="g-hstat"><div class="g-hstat-v">30 min</div><div class="g-hstat-l">DELIVERY</div></div>
+        <div class="g-hstat"><div class="g-hstat-v">5%</div><div class="g-hstat-l">CASHBACK</div></div>
+        <div class="g-hstat"><div class="g-hstat-v">500+</div><div class="g-hstat-l">PRODUCTS</div></div>
+      </div>
+    </div>
+
+    <!-- Offers -->
+    <div class="sec-head"><div class="sec-title">🔥 Today's Offers</div></div>
+    <div class="offer-scroll">
+      <div class="offer-card"><div class="offer-title">Fresh Vegetables</div><div class="offer-sub">Upto 30% off on seasonal veggies</div><div class="offer-badge">Shop Now →</div></div>
+      <div class="offer-card"><div class="offer-title">Weekend Special 🍗</div><div class="offer-sub">Chicken & Fish — Fresh stock daily</div><div class="offer-badge">Order Now →</div></div>
+      <div class="offer-card"><div class="offer-title">Coin Bonanza 🪙</div><div class="offer-sub">Earn 2x coins on orders above ₹500</div><div class="offer-badge">Learn More →</div></div>
+    </div>
+
+    <!-- Categories -->
+    <div class="sec-head"><div class="sec-title">Shop by Category</div></div>
+    <div class="cat-row" id="catRow"></div>
+
+    <!-- Products -->
+    <div class="sec-head"><div class="sec-title" id="prodSectionTitle">All Products</div><div class="sec-link">See all</div></div>
+    <div class="prod-grid" id="prodGrid"></div>
+  </div>
+</div>
+
+<!-- G-STORE (same as home but focused) -->
+<div class="screen" id="screen-gstore-page">
+  <div class="g-header">
+    <div class="g-header-top">
+      <div class="g-logo">🛒 Shop</div>
+      <div class="coin-strip"><span>🪙</span><div><div class="coin-strip-val" id="gStoreCoinDisp">1,200</div><div class="coin-strip-lbl">coins</div></div></div>
+    </div>
+    <div class="g-search"><span>🔍</span><input type="text" placeholder="Search..." id="gSearch2" oninput="renderProducts2()"></div>
+  </div>
+  <div class="scroll">
+    <div class="cat-row" id="catRow2"></div>
+    <div class="prod-grid" id="prodGrid2" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- G-CART -->
+<div class="screen" id="screen-gcart">
+  <div class="g-cart-header">
+    🧺 My Cart
+    <span style="font-size:.8rem;color:var(--g-muted)" id="cartItemCount">0 items</span>
+  </div>
+  <div class="scroll" id="cartScroll"></div>
+</div>
+
+<!-- G-ORDERS -->
+<div class="screen" id="screen-gorders">
+  <div class="g-header"><div class="g-header-top"><div class="g-logo">📦 Orders</div></div></div>
+  <div class="scroll" id="ordersScroll">
+    <div style="padding:20px 16px">
+      <div style="background:#fff;border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.05)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:800;font-size:.9rem;color:var(--g-text)">#ORD-1042</div><div style="background:rgba(26,158,92,.1);color:var(--g-primary);font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:20px">Delivered ✓</div></div>
+        <div style="font-size:.8rem;color:var(--g-muted)">Tomatoes, Onions, Chicken Breast, Milk</div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:.82rem"><span style="font-weight:700;color:var(--g-text)">₹ 342</span><span style="color:var(--g-coin);font-weight:700">+🪙 171 earned</span></div>
+      </div>
+      <div style="background:#fff;border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.05)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:800;font-size:.9rem;color:var(--g-text)">#ORD-1038</div><div style="background:rgba(255,107,53,.1);color:var(--g-accent);font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:20px">Out for Delivery 🛵</div></div>
+        <div style="font-size:.8rem;color:var(--g-muted)">Basmati Rice, Dal, Oil, Paneer</div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:.82rem"><span style="font-weight:700;color:var(--g-text)">₹ 590</span><span style="color:var(--g-coin);font-weight:700">+🪙 295 earned</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- G-PROFILE -->
+<div class="screen" id="screen-ggprofile">
+  <div class="g-header"><div class="g-header-top"><div class="g-logo">👤 My Account</div></div></div>
+  <div class="scroll">
+    <div style="margin:16px 16px 12px;background:#fff;border-radius:20px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.07)">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="font-size:3rem">👤</div>
+        <div><div style="font-family:var(--head);font-size:1.2rem;color:var(--g-text)">Rahul Kumar</div><div style="font-size:.75rem;color:var(--g-muted);margin-top:2px">rahul@email.com • +91 98765 43210</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px">
+        <div style="background:var(--g-bg);border-radius:10px;padding:12px;text-align:center"><div style="font-family:var(--head);font-size:1.2rem;color:var(--g-primary)">12</div><div style="font-size:.6rem;color:var(--g-muted)">ORDERS</div></div>
+        <div style="background:rgba(240,192,64,.08);border-radius:10px;padding:12px;text-align:center"><div style="font-family:var(--head);font-size:1.2rem;color:var(--g-coin)" id="gProfileCoins">1,200</div><div style="font-size:.6rem;color:var(--g-muted)">COINS</div></div>
+        <div style="background:var(--g-bg);border-radius:10px;padding:12px;text-align:center"><div style="font-family:var(--head);font-size:1.2rem;color:var(--g-text)">₹85</div><div style="font-size:.6rem;color:var(--g-muted)">SAVED</div></div>
+      </div>
+    </div>
+
+    <div style="margin:0 16px 12px;background:linear-gradient(135deg,rgba(240,192,64,.1),rgba(240,192,64,.04));border:1px solid rgba(240,192,64,.25);border-radius:var(--radius);padding:16px">
+      <div style="font-weight:800;color:var(--g-coin);margin-bottom:4px">🪙 Coin Cashback Program</div>
+      <div style="font-size:.78rem;color:var(--g-muted);margin-bottom:12px">Har ₹100 ki shopping pe 🪙 50 coins milenge!<br>1000 coins = ₹10 discount on next order.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.78rem">
+        <div style="background:rgba(255,255,255,.5);border-radius:8px;padding:10px">💰 ₹100 spent = 🪙 50</div>
+        <div style="background:rgba(255,255,255,.5);border-radius:8px;padding:10px">🛒 Min order ₹199</div>
+        <div style="background:rgba(255,255,255,.5);border-radius:8px;padding:10px">⚡ 2x coins on ₹500+</div>
+        <div style="background:rgba(255,255,255,.5);border-radius:8px;padding:10px">🎮 Play to earn more</div>
+      </div>
+    </div>
+
+    <div style="margin:0 16px;display:flex;flex-direction:column;gap:8px">
+      <div onclick="toggleMode()" style="display:flex;align-items:center;gap:12px;padding:14px;background:#fff;border-radius:var(--radius-sm);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.05)">
+        <span style="font-size:1.2rem">🎮</span><div style="flex:1;font-size:.88rem;font-weight:700;color:var(--g-text)">Switch to P2E — Earn Coins by Racing</div><span style="color:var(--g-muted)">›</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;background:#fff;border-radius:var(--radius-sm);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.05)">
+        <span style="font-size:1.2rem">📍</span><div style="flex:1;font-size:.88rem;font-weight:700;color:var(--g-text)">Delivery Address</div><span style="color:var(--g-muted)">›</span>
+      </div>
+      <div onclick="claimDaily()" style="display:flex;align-items:center;gap:12px;padding:14px;background:#fff;border-radius:var(--radius-sm);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.05)">
+        <span style="font-size:1.2rem">🎁</span><div style="flex:1;font-size:.88rem;font-weight:700;color:var(--g-text)">Daily Login Bonus</div><span style="font-family:var(--head);color:var(--g-coin)">🪙 +50</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     P2E SCREENS
+══════════════════════════════════ -->
+
+<!-- P2E HOME -->
+<div class="screen" id="screen-phome">
+  <div class="p-header">
+    <div class="p-header-row">
+      <div class="p-logo">Green<span>Shop</span> P2E</div>
+      <div class="p-coin-pill"><span>🪙</span><span class="p-coin-v" id="pCoinDisp">1,200</span></div>
+    </div>
+  </div>
+  <div class="scroll">
+
+    <!-- Wallet -->
+    <div class="p-wallet">
+      <div class="pw-label">COIN BALANCE</div>
+      <div class="pw-amount">🪙 <span id="pWalletBig">1,200</span></div>
+      <div class="pw-inr">≈ ₹<span id="pWalletInr">12.00</span> grocery discount value</div>
+      <div class="pw-rate">🔄 1000 Coins = ₹10 OFF Groceries</div>
+      <div class="pw-actions">
+        <button class="btn btn-gold-p btn-md" style="width:100%" onclick="pNav('race')">🏁 Race Now</button>
+        <button class="btn btn-gp btn-md" style="width:100%" onclick="switchToGrocery()">🛒 Use Coins</button>
+      </div>
+    </div>
+
+    <!-- Earn Methods -->
+    <div class="p-sec-head">Ways to Earn Coins</div>
+    <div class="p-card">
+      <div class="earn-grid">
+        <div class="earn-box" onclick="pNav('race')"><div class="earn-icon-big">🏁</div><div class="earn-title">Win Race</div><div class="earn-coins-val">🪙 500</div><div class="earn-sub">1st place finish</div></div>
+        <div class="earn-box" onclick="claimDaily()"><div class="earn-icon-big">🎁</div><div class="earn-title">Daily Login</div><div class="earn-coins-val">🪙 50</div><div class="earn-sub">Har roz free</div></div>
+        <div class="earn-box" onclick="pNav('race')"><div class="earn-icon-big">📺</div><div class="earn-title">Watch Ad</div><div class="earn-coins-val">🪙 20</div><div class="earn-sub">Race entry pe</div></div>
+        <div class="earn-box" onclick="pNav('pprofile')"><div class="earn-icon-big">👥</div><div class="earn-title">Referral</div><div class="earn-coins-val">🪙 200+</div><div class="earn-sub">Per friend</div></div>
+        <div class="earn-box" onclick="switchToGrocery()"><div class="earn-icon-big">🛒</div><div class="earn-title">Shop</div><div class="earn-coins-val">🪙 50/₹100</div><div class="earn-sub">Cashback</div></div>
+        <div class="earn-box" onclick="pNav('gstore')"><div class="earn-icon-big">🎮</div><div class="earn-title">Game Items</div><div class="earn-coins-val">Use Coins</div><div class="earn-sub">Buy skins</div></div>
+      </div>
+    </div>
+
+    <!-- Referral System -->
+    <div class="p-sec-head">👥 Referral Program</div>
+    <div class="ref-card">
+      <div class="ref-title">Refer & Earn Together!</div>
+      <div class="ref-sub">Apna code share karo — aapko 🪙 200 milenge, friend ko 🪙 100 signup bonus milega. Unlimited referrals!</div>
+      <div class="ref-code-box">
+        <div class="ref-code" id="refCode">CYCLE7749</div>
+        <button class="copy-btn" onclick="copyRef()">📋 Copy</button>
+      </div>
+      <div class="ref-stats">
+        <div class="ref-stat"><div class="ref-stat-v" id="refCount">3</div><div class="ref-stat-l">REFERRED</div></div>
+        <div class="ref-stat"><div class="ref-stat-v" id="refEarned">600</div><div class="ref-stat-l">COINS EARNED</div></div>
+        <div class="ref-stat"><div class="ref-stat-v">🪙200</div><div class="ref-stat-l">PER REFER</div></div>
+      </div>
+      <button class="btn btn-gp btn-md" style="width:100%;margin-top:12px" onclick="simulateRef()">👥 Simulate Referral (+🪙 200)</button>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="p-sec-head">Recent Activity</div>
+    <div class="p-card" id="pActivity">
+      <div class="act-row"><div class="act-ic">🏆</div><div class="act-inf"><div class="act-t">Race Win — 1st Place</div><div class="act-d">2 min ago</div></div><div class="act-c act-plus">+🪙500</div></div>
+      <div class="act-row"><div class="act-ic">🛒</div><div class="act-inf"><div class="act-t">Grocery Cashback</div><div class="act-d">₹342 order</div></div><div class="act-c act-plus">+🪙171</div></div>
+      <div class="act-row"><div class="act-ic">👥</div><div class="act-inf"><div class="act-t">Referral Bonus</div><div class="act-d">Storm_22 joined</div></div><div class="act-c act-plus">+🪙200</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- P2E ADS -->
+<div class="screen" id="screen-ads" style="background:linear-gradient(160deg,#07090e,#0d1220);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:16px;">
+
+  <div id="adStepLbl" style="font-size:.68rem;letter-spacing:4px;color:rgba(238,242,255,.4);text-align:center;">AD 1 OF 2 — WATCH TO ENTER RACE</div>
+
+  <!-- Ad Card -->
+  <div style="width:100%;max-width:380px;background:rgba(255,255,255,.04);border:1.5px solid rgba(240,192,64,.2);border-radius:22px;padding:28px 20px;text-align:center;">
+    <span style="font-size:4rem;display:block;animation:adRock 1.2s ease infinite;" id="adEmoji2">📱</span>
+    <div style="font-size:.58rem;letter-spacing:4px;color:rgba(238,242,255,.35);margin:10px 0 4px;">ADVERTISEMENT</div>
+    <div style="font-family:var(--head);font-size:1.7rem;color:var(--p-gold);" id="adBrand2">CashKaro</div>
+    <div style="font-size:.8rem;color:rgba(238,242,255,.5);margin:6px 0 16px;line-height:1.5;" id="adDesc2">Har purchase pe cashback pao!</div>
+
+    <!-- Timer circle -->
+    <div style="display:inline-flex;align-items:center;justify-content:center;width:80px;height:80px;border-radius:50%;border:3px solid rgba(240,192,64,.3);background:rgba(240,192,64,.08);margin-bottom:10px;">
+      <div>
+        <div style="font-family:var(--head);font-size:2rem;color:var(--p-gold);line-height:1;" id="adNum">5</div>
+        <div style="font-size:.52rem;color:rgba(238,242,255,.4);letter-spacing:2px;">SEC</div>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div style="width:100%;height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;">
+      <div id="adBar2" style="height:100%;width:0%;background:linear-gradient(90deg,var(--p-gold),var(--p-red));border-radius:3px;transition:width 1s linear;"></div>
+    </div>
+  </div>
+
+  <!-- Dots -->
+  <div style="display:flex;gap:8px;">
+    <div id="adDot20" style="width:10px;height:10px;border-radius:50%;background:var(--p-gold);transition:.3s;"></div>
+    <div id="adDot21" style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.15);transition:.3s;"></div>
+  </div>
+
+  <!-- Continue button — always in view -->
+  <div style="width:100%;max-width:380px;">
+    <button id="adContBtn2" onclick="adNext2()" style="width:100%;padding:17px;border:none;border-radius:16px;background:linear-gradient(135deg,var(--p-green),#16a35a);color:#fff;font-family:var(--head);font-size:1.05rem;cursor:pointer;letter-spacing:1px;opacity:.3;pointer-events:none;transition:.3s;">
+      ✅ Continue to Race
+    </button>
+    <div id="adWaitLbl" style="text-align:center;font-size:.72rem;color:rgba(238,242,255,.35);margin-top:8px;">Please watch the ad completely...</div>
+  </div>
+
+</div>
+
+<!-- P2E LOBBY -->
+<div class="screen" id="screen-lobby">
+  <div class="p-header">
+    <div class="p-header-row">
+      <div style="font-family:var(--head);font-size:1.2rem;color:var(--p-gold)">⛰️ Race Lobby</div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div style="background:rgba(255,255,255,.07);border-radius:10px;padding:8px 14px;text-align:center"><div style="font-family:var(--head);font-size:1.6rem;color:var(--p-green);line-height:1" id="lobNum2">1</div><div style="font-size:.55rem;color:var(--p-muted)">/100 RIDERS</div></div>
+        <div style="background:rgba(255,59,85,.1);border-radius:10px;padding:8px 14px;text-align:center"><div style="font-family:var(--head);font-size:1.6rem;color:var(--p-red);line-height:1" id="lobTimer2">30</div><div style="font-size:.55rem;color:var(--p-muted)">SECONDS</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="lobby-wrap">
+    <div class="lobby-players" id="lobPlayers"></div>
+    <div style="height:6px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;margin-bottom:12px"><div style="height:100%;background:linear-gradient(90deg,var(--p-red),var(--p-gold));transition:width 1s linear" id="lobBar2" style="width:100%"></div></div>
+    <div class="p-card" style="text-align:center;color:var(--p-muted);font-size:.82rem">🟢 Waiting for all riders... Race starts soon!</div>
+  </div>
+</div>
+
+<!-- P2E RACE -->
+<div class="screen" id="screen-race" style="position:relative;background:#07090e;">
+  <div id="raceWrap" style="position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;">
+    <canvas id="raceCanvas"></canvas>
+    <div class="r-hud">
+      <div class="r-hud-stat"><div class="r-hud-v" style="color:var(--p-blue)" id="rSpd">0</div><div class="r-hud-l">KM/H</div></div>
+      <div class="r-hud-center"><div class="r-prog-bar"><div class="r-prog-fill" id="rPF" style="width:0%"></div></div><div class="r-prog-lbl" id="rDL">5.00 KM</div></div>
+      <div class="r-hud-stat"><div class="r-hud-v" style="color:var(--p-red)" id="rAlive">99</div><div class="r-hud-l">ALIVE</div></div>
+    </div>
+    <div class="r-rank"><div class="r-rank-v" id="rRank">50</div><div style="font-size:.52rem;color:rgba(255,255,255,.4);letter-spacing:2px">RANK</div></div>
+    <div class="r-boost"><div class="r-boost-bar"><div class="r-boost-fill" id="rBF" style="width:100%"></div></div><div class="r-boost-lbl">⚡ BOOST</div></div>
+    <div class="r-mini-lb" id="rMiniLb"></div>
+    <!-- Powerup HUD -->
+    <div id="rPowerupHud" style="display:none;position:absolute;top:70px;left:10px;z-index:20;background:rgba(0,0,0,.65);border:1px solid rgba(240,192,64,.4);border-radius:10px;padding:7px 12px;font-family:Syne,sans-serif;font-size:.85rem;color:#f0c040;font-weight:800;"></div>
+    <!-- Difficulty indicator -->
+    <div id="rDiffHud" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:20;font-family:Syne,sans-serif;font-size:.7rem;font-weight:800;letter-spacing:2px;opacity:.8;"></div>
+    <div class="r-ctrl">
+      <div class="r-btn" ontouchstart="RK.left=true" ontouchend="RK.left=false" onmousedown="RK.left=true" onmouseup="RK.left=false">⬅️</div>
+      <div class="r-btn r-btn-boost" ontouchstart="RK.boost=true" ontouchend="RK.boost=false" onmousedown="RK.boost=true" onmouseup="RK.boost=false">⚡</div>
+      <div class="r-btn" ontouchstart="RK.right=true" ontouchend="RK.right=false" onmousedown="RK.right=true" onmouseup="RK.right=false">➡️</div>
+    </div>
+    <div class="r-finish" id="rFinish">
+      <div class="r-finish-card">
+        <div style="font-size:3.5rem" id="rfE">🏆</div>
+        <div style="font-family:var(--head);font-size:2rem;color:var(--p-gold);margin:8px 0" id="rfT">CHAMPION!</div>
+        <div style="font-size:.82rem;color:var(--p-muted);margin-bottom:16px" id="rfS">Unbeatable!</div>
+        <div style="background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.2);border-radius:12px;padding:14px;margin-bottom:14px">
+          <div style="font-size:.62rem;letter-spacing:3px;color:var(--p-muted)">COINS EARNED</div>
+          <div style="font-family:var(--head);font-size:2.4rem;color:var(--p-gold)" id="rfC">🪙 500</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button onclick="afterRace('home')" style="padding:12px;background:rgba(255,255,255,.06);border:1px solid var(--p-border);border-radius:12px;color:var(--p-text);font-family:var(--font);font-weight:700;cursor:pointer;font-size:.82rem">← P2E Home</button>
+          <button onclick="afterRace('shop')" style="padding:12px;background:linear-gradient(135deg,var(--g-primary),var(--g-primary2));border:none;border-radius:12px;color:#fff;font-family:var(--font);font-weight:700;cursor:pointer;font-size:.82rem">🛒 Use Coins</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P2E GAME STORE -->
+<div class="screen" id="screen-gstore">
+  <div class="p-header"><div class="p-header-row"><div class="p-logo">🎮 Game Store</div><div class="p-coin-pill"><span>🪙</span><span class="p-coin-v" id="gsCoinsDisp">1,200</span></div></div></div>
+  <div class="scroll">
+    <div class="gs-tabs">
+      <div class="gs-tab active" onclick="gsTab(0,this)">🚴 Bikes</div>
+      <div class="gs-tab" onclick="gsTab(1,this)">👕 Outfits</div>
+      <div class="gs-tab" onclick="gsTab(2,this)">🗺️ Tracks</div>
+      <div class="gs-tab" onclick="gsTab(3,this)">💥 Powers</div>
+    </div>
+    <div class="gs-grid2" id="gsGrid"></div>
+  </div>
+</div>
+
+<!-- P2E PROFILE -->
+<div class="screen" id="screen-pprofile">
+  <div class="p-header"><div class="p-header-row"><div class="p-logo">👤 Profile</div><div class="p-coin-pill"><span>🪙</span><span class="p-coin-v" id="ppCoinsDisp">1,200</span></div></div></div>
+  <div class="scroll">
+    <div class="p-profile-hero">
+      <span class="p-ava">🥷</span>
+      <div class="p-uname">RIDER_7749</div>
+      <div class="p-utag">⚡ Gold III • Playing since Jan 2025</div>
+      <div class="p-stats3">
+        <div class="p3-box"><div class="p3-v">14</div><div class="p3-l">RACES</div></div>
+        <div class="p3-box"><div class="p3-v">3</div><div class="p3-l">WINS</div></div>
+        <div class="p3-box"><div class="p3-v" id="ppCoinBig">1,200</div><div class="p3-l">COINS</div></div>
+      </div>
+    </div>
+
+    <div class="p-sec-head">Referral Program</div>
+    <div class="ref-card">
+      <div class="ref-title">Your Referral Code</div>
+      <div class="ref-sub">Dono ko coins milenge! Aapko 🪙 200 + friend ko 🪙 100 signup bonus.</div>
+      <div class="ref-code-box"><div class="ref-code">CYCLE7749</div><button class="copy-btn" onclick="copyRef()">📋 Copy</button></div>
+      <div class="ref-stats">
+        <div class="ref-stat"><div class="ref-stat-v" id="refCount2">3</div><div class="ref-stat-l">REFERRED</div></div>
+        <div class="ref-stat"><div class="ref-stat-v" id="refEarned2">600</div><div class="ref-stat-l">EARNED</div></div>
+        <div class="ref-stat"><div class="ref-stat-v">∞</div><div class="ref-stat-l">NO LIMIT</div></div>
+      </div>
+      <button class="btn btn-gp btn-md" style="width:100%;margin-top:12px" onclick="simulateRef()">👥 Simulate Referral (+🪙 200)</button>
+    </div>
+
+    <div class="p-sec-head">Switch App Face</div>
+    <div class="p-card">
+      <button class="btn btn-ghost-p btn-lg" onclick="switchToGrocery()">🛒 Go to Grocery Store</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     ADMIN PANEL SCREEN
+══════════════════════════════════ -->
+<div class="screen" id="screen-admin">
+  <!-- Admin Login Gate -->
+  <div id="adminLogin" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;background:#0d1117">
+    <div style="font-size:3.5rem;margin-bottom:16px">🔐</div>
+    <div style="font-family:var(--head);font-size:1.5rem;color:#e11d48;margin-bottom:6px">Admin Panel</div>
+    <div style="font-size:.8rem;color:rgba(255,255,255,.4);margin-bottom:28px;text-align:center">GreenShop Store Management</div>
+    <div style="width:100%;max-width:300px">
+      <div style="margin-bottom:12px"><div class="admin-label">Username</div><input class="admin-input" id="adminUser" placeholder="Enter username" value="admin"></div>
+      <div style="margin-bottom:20px"><div class="admin-label">Password</div><input class="admin-input" type="password" id="adminPass" placeholder="Enter password" value="1234"></div>
+      <button onclick="adminLogin()" style="width:100%;padding:15px;border:none;border-radius:var(--radius);background:linear-gradient(135deg,#e11d48,#9f1239);color:#fff;font-family:var(--head);font-size:1rem;cursor:pointer;letter-spacing:1px">LOGIN →</button>
+      <div style="font-size:.7rem;color:rgba(255,255,255,.3);text-align:center;margin-top:12px">Demo: admin / 1234</div>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard (hidden until login) -->
+  <div id="adminDash" style="display:none;flex-direction:column;height:100%">
+    <div class="admin-header">
+      <div class="admin-logo">⚙️ Admin Panel</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="admin-badge">ADMIN</div>
+        <button onclick="adminLogout()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px 12px;color:rgba(255,255,255,.6);cursor:pointer;font-size:.72rem">Logout</button>
+      </div>
+    </div>
+    <div style="overflow-y:auto;flex:1;padding-bottom:80px">
+      <!-- Admin Tabs -->
+      <div style="padding:12px 16px 0">
+        <div class="admin-tabs">
+          <div class="admin-tab active" id="at0" onclick="adminTab(0)">📊 Dashboard</div>
+          <div class="admin-tab" id="at1" onclick="adminTab(1)">🛒 Products</div>
+          <div class="admin-tab" id="at2" onclick="adminTab(2)">📦 Orders</div>
+          <div class="admin-tab" id="at3" onclick="adminTab(3)">🪙 Coins</div>
+          <div class="admin-tab" id="at4" onclick="adminTab(4)">👥 Users</div>
+        </div>
+      </div>
+
+      <!-- TAB 0: Dashboard -->
+      <div id="adminTab0">
+        <div class="admin-stat-grid">
+          <div class="admin-stat"><div class="ast-icon">💰</div><div class="ast-val">₹24,850</div><div class="ast-lbl">TODAY REVENUE</div><div class="ast-change ast-up">↑ 18% vs yesterday</div></div>
+          <div class="admin-stat"><div class="ast-icon">📦</div><div class="ast-val">143</div><div class="ast-lbl">ORDERS TODAY</div><div class="ast-change ast-up">↑ 12 from yesterday</div></div>
+          <div class="admin-stat"><div class="ast-icon">👥</div><div class="ast-val">1,247</div><div class="ast-lbl">TOTAL USERS</div><div class="ast-change ast-up">↑ 34 new today</div></div>
+          <div class="admin-stat"><div class="ast-icon">🪙</div><div class="ast-val" id="totalCoinsIssued">8,42,500</div><div class="ast-lbl">COINS ISSUED</div><div class="ast-change ast-down">₹842 redeemed</div></div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-title">📈 Weekly Revenue (₹)</div>
+          <div class="chart-bar-wrap" id="revenueChart"></div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-title">🏆 Top Categories</div>
+          <div id="catChart"></div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-title">⚡ Live Activity</div>
+          <div id="liveActivity" style="font-size:.8rem;color:rgba(238,242,255,.6);line-height:2"></div>
+        </div>
+      </div>
+
+      <!-- TAB 1: Products -->
+      <div id="adminTab1" style="display:none">
+        <div class="admin-card">
+          <div class="admin-card-title">➕ Add New Product</div>
+
+          <!-- Image Upload Section -->
+          <div class="admin-form-row">
+            <label class="admin-label">Product Image / Emoji</label>
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <!-- Preview box -->
+              <div id="imgPreviewBox" style="width:80px;height:80px;border-radius:12px;background:rgba(255,255,255,.06);border:2px dashed rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;cursor:pointer;position:relative;" onclick="document.getElementById('prodImgInput').click()">
+                <div id="imgPreviewInner" style="font-size:2.8rem">📦</div>
+                <div style="position:absolute;bottom:2px;right:2px;background:rgba(34,214,122,.8);border-radius:4px;padding:2px 4px;font-size:.5rem;color:#000;font-weight:800">TAP</div>
+              </div>
+              <div style="flex:1">
+                <!-- Hidden file input -->
+                <input type="file" id="prodImgInput" accept="image/*" style="display:none" onchange="handleProdImg(this)">
+                <!-- Upload button -->
+                <button onclick="document.getElementById('prodImgInput').click()" style="width:100%;padding:10px;background:rgba(34,214,122,.12);border:1px solid rgba(34,214,122,.3);border-radius:var(--radius-sm);color:#22d67a;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:8px">📸 Upload Photo</button>
+                <!-- OR emoji -->
+                <div style="font-size:.65rem;color:rgba(255,255,255,.3);text-align:center;margin-bottom:6px">— YA EMOJI USE KARO —</div>
+                <input class="admin-input" id="newProdEmoji" placeholder="🧀 emoji type karo" style="font-size:1.3rem;text-align:center" oninput="updateImgPreview(this.value)">
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-2col">
+            <div class="admin-form-row"><label class="admin-label">Product Name</label><input class="admin-input" id="newProdName" placeholder="e.g. Fresh Paneer"></div>
+            <div class="admin-form-row"><label class="admin-label">Price (₹)</label><input class="admin-input" id="newProdPrice" type="number" placeholder="99"></div>
+          </div>
+          <div class="admin-2col">
+            <div class="admin-form-row"><label class="admin-label">Unit</label><input class="admin-input" id="newProdUnit" placeholder="500g / 1 kg"></div>
+            <div class="admin-form-row"><label class="admin-label">Category</label>
+              <select class="admin-select" id="newProdCat">
+                <option value="veg">🥬 Vegetables</option>
+                <option value="fruit">🍎 Fruits</option>
+                <option value="chicken">🍗 Chicken</option>
+                <option value="fish">🐟 Fish</option>
+                <option value="dairy">🥛 Dairy</option>
+                <option value="grocery">🌾 Grocery</option>
+              </select>
+            </div>
+          </div>
+          <button onclick="adminAddProduct()" style="width:100%;padding:13px;border:none;border-radius:var(--radius);background:linear-gradient(135deg,#22d67a,#16a35a);color:#fff;font-family:var(--head);font-size:.95rem;cursor:pointer;margin-top:4px">➕ Add Product</button>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-title">📦 All Products (<span id="prodCount">0</span>)</div>
+          <div id="adminProdList"></div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Orders -->
+      <div id="adminTab2" style="display:none">
+        <div class="admin-card">
+          <div class="admin-card-title">📋 Recent Orders</div>
+          <div id="adminOrderList"></div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-title">🗂️ Order Summary</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+            <div style="background:rgba(34,214,122,.08);border:1px solid rgba(34,214,122,.2);border-radius:10px;padding:12px;text-align:center"><div style="font-family:var(--head);font-size:1.4rem;color:#22d67a">89</div><div style="font-size:.62rem;color:rgba(255,255,255,.4)">DELIVERED</div></div>
+            <div style="background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.2);border-radius:10px;padding:12px;text-align:center"><div style="font-family:var(--head);font-size:1.4rem;color:#ffa500">38</div><div style="font-size:.62rem;color:rgba(255,255,255,.4)">PENDING</div></div>
+            <div style="background:rgba(255,69,96,.08);border:1px solid rgba(255,69,96,.2);border-radius:10px;padding:12px;text-align:center"><div style="font-family:var(--head);font-size:1.4rem;color:#ff4560">16</div><div style="font-size:.62rem;color:rgba(255,255,255,.4)">CANCELLED</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: Coins Settings -->
+      <div id="adminTab3" style="display:none">
+        <div class="admin-card">
+          <div class="admin-card-title">🪙 Coin Rate Settings</div>
+          <div class="coin-setting-row">
+            <div><div class="csr-label">Grocery Cashback Rate</div><div class="csr-sub">Coins per ₹100 spent</div></div>
+            <div class="csr-val"><input class="csr-input" id="cs_grocery" value="50"><span class="csr-unit">coins/₹100</span></div>
+          </div>
+          <div class="coin-setting-row">
+            <div><div class="csr-label">Race Win — 1st Place</div><div class="csr-sub">Coins for winner</div></div>
+            <div class="csr-val"><input class="csr-input" id="cs_win1" value="500"><span class="csr-unit">coins</span></div>
+          </div>
+          <div class="coin-setting-row">
+            <div><div class="csr-label">Race Win — 2nd Place</div></div>
+            <div class="csr-val"><input class="csr-input" id="cs_win2" value="300"><span class="csr-unit">coins</span></div>
+          </div>
+          <div class="coin-setting-row">
+            <div><div class="csr-label">Race Win — 3rd Place</div></div>
+            <div class="csr-val"><input class="csr-input" id="cs_win3" value="150"><span class="csr-unit">coins</span></div>
+          </div>
+          <div class="coin-setting-row">
+            <div><div class="csr-label">Daily Login Bonus</div><div class="csr-sub">Per day claim</div></div>
+            <div class="csr-val"><input class="csr-input" id="cs_daily" value="50"><span class="csr-unit">coins</span></div>
+          </div>
+          <div class="coin-setting-row">
+            <div><div class="csr-label">User Referral Bonus</div><div class="csr-sub">Normal user referral</div></div>
+            <div class="csr-val"><input class="csr-input" id="cs_ref_user" value="200"><span class="csr-unit">coins</span></div>
+          </div>
+          <div class="coin-setting-row" style="border:1px solid rgba(192,64,240,.25);border-radius:12px;padding:12px;background:rgba(192,64,240,.04)">
+            <div><div class="csr-label" style="color:#c040f0">🏪 Dukandaar Referral Bonus</div><div class="csr-sub">Shop owner gets more!</div></div>
+            <div class="csr-val"><input class="csr-input" id="cs_ref_dk" value="500" style="color:#c040f0;border-color:rgba(192,64,240,.3)"><span class="csr-unit">coins</span></div>
+          </div>
+          <div class="coin-setting-row">
+            <div><div class="csr-label">Redemption Rate</div><div class="csr-sub">Coins for ₹10 discount</div></div>
+            <div class="csr-val"><input class="csr-input" id="cs_redeem" value="1000"><span class="csr-unit">coins/₹10</span></div>
+          </div>
+          <button class="save-btn-admin" onclick="saveAdminCoins()">💾 Save Coin Settings</button>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-title">📊 Coin Economy Overview</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="background:rgba(240,192,64,.06);border:1px solid rgba(240,192,64,.15);border-radius:10px;padding:14px;text-align:center"><div style="font-size:1.3rem">🪙</div><div style="font-family:var(--head);font-size:1.2rem;color:#f0c040">8,42,500</div><div style="font-size:.62rem;color:rgba(255,255,255,.4)">TOTAL ISSUED</div></div>
+            <div style="background:rgba(255,69,96,.06);border:1px solid rgba(255,69,96,.15);border-radius:10px;padding:14px;text-align:center"><div style="font-size:1.3rem">💸</div><div style="font-family:var(--head);font-size:1.2rem;color:#ff4560">2,14,000</div><div style="font-size:.62rem;color:rgba(255,255,255,.4)">REDEEMED</div></div>
+            <div style="background:rgba(34,214,122,.06);border:1px solid rgba(34,214,122,.15);border-radius:10px;padding:14px;text-align:center"><div style="font-size:1.3rem">💰</div><div style="font-family:var(--head);font-size:1.2rem;color:#22d67a">₹2,140</div><div style="font-size:.62rem;color:rgba(255,255,255,.4)">VALUE REDEEMED</div></div>
+            <div style="background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.15);border-radius:10px;padding:14px;text-align:center"><div style="font-size:1.3rem">📈</div><div style="font-family:var(--head);font-size:1.2rem;color:#38bdf8">6,28,500</div><div style="font-size:.62rem;color:rgba(255,255,255,.4)">COINS ACTIVE</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: Users -->
+      <div id="adminTab4" style="display:none">
+        <div class="admin-card">
+          <div class="admin-card-title">👥 All Users (1,247)</div>
+          <div id="adminUserList"></div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-title">🏪 Dukandaar Accounts (12)</div>
+          <div id="adminDkList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     DUKANDAAR REFERRAL SCREEN
+══════════════════════════════════ -->
+<div class="screen dk-screen" id="screen-dk">
+  <div class="p-header">
+    <div class="p-header-row">
+      <div class="p-logo" style="color:#c040f0">🏪 Dukandaar<span style="color:#fff"> Zone</span></div>
+      <div class="p-coin-pill" style="border-color:rgba(192,64,240,.3);background:rgba(192,64,240,.1)"><span>🪙</span><span class="p-coin-v" id="dkCoinDisp" style="color:#c040f0">1,200</span></div>
+    </div>
+  </div>
+  <div class="scroll">
+
+    <!-- Hero -->
+    <div class="dk-hero">
+      <div class="dk-badge">🏪 SHOP OWNER PROGRAM</div>
+      <div class="dk-title">Dukandaar Referral</div>
+      <div class="dk-title" style="color:#c040f0">Special Rewards!</div>
+      <div class="dk-sub">Shop owner hone ka fayda — normal users se zyada coins kamao. Jitna zyada customers laoge, utna zyada bonus!</div>
+    </div>
+
+    <!-- User vs Dukandaar comparison -->
+    <div style="margin:0 16px 6px;font-size:.65rem;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.35)">USER vs DUKANDAAR COMPARISON</div>
+    <div class="dk-vs-grid">
+      <div class="dk-vs-card dk-vs-user">
+        <div class="dk-vs-icon">👤</div>
+        <div class="dk-vs-title" style="color:#22d67a">Normal User</div>
+        <div class="dk-vs-item"><span class="dk-vs-key">Per Referral</span><span class="dk-vs-val user-col">🪙 200</span></div>
+        <div class="dk-vs-item"><span class="dk-vs-key">Friend Bonus</span><span class="dk-vs-val user-col">🪙 100</span></div>
+        <div class="dk-vs-item"><span class="dk-vs-key">Max/month</span><span class="dk-vs-val user-col">No limit</span></div>
+        <div class="dk-vs-item"><span class="dk-vs-key">Tier Bonus</span><span class="dk-vs-val user-col">None</span></div>
+      </div>
+      <div class="dk-vs-card dk-vs-shop">
+        <div class="dk-vs-icon">🏪</div>
+        <div class="dk-vs-title" style="color:#c040f0">Dukandaar</div>
+        <div class="dk-vs-item"><span class="dk-vs-key">Per Referral</span><span class="dk-vs-val shop-col">🪙 500</span></div>
+        <div class="dk-vs-item"><span class="dk-vs-key">Friend Bonus</span><span class="dk-vs-val shop-col">🪙 200</span></div>
+        <div class="dk-vs-item"><span class="dk-vs-key">Max/month</span><span class="dk-vs-val shop-col">No limit</span></div>
+        <div class="dk-vs-item"><span class="dk-vs-key">Tier Bonus</span><span class="dk-vs-val shop-col">Up to 2x</span></div>
+      </div>
+    </div>
+
+    <!-- Dukandaar Code Box -->
+    <div class="dk-code-box">
+      <div class="dk-code-label">YOUR DUKANDAAR CODE</div>
+      <div class="dk-code-row">
+        <div class="dk-code-val" id="dkCode">DKAAN-7749</div>
+        <button class="dk-copy-btn" onclick="copyDk()">📋 Copy</button>
+      </div>
+      <button onclick="simulateDkRef()" style="width:100%;padding:13px;border:none;border-radius:var(--radius-sm);background:linear-gradient(135deg,#c040f0,#7c13a8);color:#fff;font-family:var(--head);font-size:.95rem;cursor:pointer;letter-spacing:1px">👥 Simulate Referral (+🪙500)</button>
+    </div>
+
+    <!-- Tier System -->
+    <div style="margin:0 16px 8px;font-size:.65rem;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.35)">DUKANDAAR TIER SYSTEM</div>
+    <div style="margin:0 16px 12px">
+      <div class="dk-tier-grid">
+        <div class="dk-tier active-tier">
+          <div class="dk-tier-icon">🥉</div>
+          <div class="dk-tier-name">Starter</div>
+          <div class="dk-tier-coins">🪙 500</div>
+          <div class="dk-tier-cond">0-10 refs</div>
+        </div>
+        <div class="dk-tier">
+          <div class="dk-tier-icon">🥈</div>
+          <div class="dk-tier-name">Silver</div>
+          <div class="dk-tier-coins">🪙 700</div>
+          <div class="dk-tier-cond">11-25 refs</div>
+        </div>
+        <div class="dk-tier">
+          <div class="dk-tier-icon">🥇</div>
+          <div class="dk-tier-name">Gold</div>
+          <div class="dk-tier-coins">🪙 1,000</div>
+          <div class="dk-tier-cond">26-50 refs</div>
+        </div>
+        <div class="dk-tier">
+          <div class="dk-tier-icon">💎</div>
+          <div class="dk-tier-name">Diamond</div>
+          <div class="dk-tier-coins">🪙 1,500</div>
+          <div class="dk-tier-cond">51-100 refs</div>
+        </div>
+        <div class="dk-tier">
+          <div class="dk-tier-icon">👑</div>
+          <div class="dk-tier-name">Legend</div>
+          <div class="dk-tier-coins">🪙 2,000</div>
+          <div class="dk-tier-cond">100+ refs</div>
+        </div>
+        <div class="dk-tier">
+          <div class="dk-tier-icon">🌟</div>
+          <div class="dk-tier-name">CycleStar</div>
+          <div class="dk-tier-coins">🪙 3,000</div>
+          <div class="dk-tier-cond">250+ refs</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div style="margin:0 16px 8px;font-size:.65rem;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.35)">YOUR STATS</div>
+    <div class="dk-stats-row">
+      <div class="dk-stat"><div class="dk-stat-v" id="dkRefCount">7</div><div class="dk-stat-l">REFERRED</div></div>
+      <div class="dk-stat"><div class="dk-stat-v" id="dkEarned">3,500</div><div class="dk-stat-l">EARNED</div></div>
+      <div class="dk-stat"><div class="dk-stat-v">🥉</div><div class="dk-stat-l">STARTER</div></div>
+    </div>
+
+    <!-- Progress to next tier -->
+    <div class="p-card" style="margin:0 16px 12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:.8rem;font-weight:700;color:#eef2ff">Progress to Silver 🥈</div>
+        <div style="font-size:.78rem;color:#c040f0;font-weight:700" id="dkProgressLbl">7 / 11 refs</div>
+      </div>
+      <div style="height:8px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden">
+        <div style="height:100%;background:linear-gradient(90deg,#c040f0,#7c13a8);border-radius:4px;width:63.6%;transition:width 1s" id="dkProgressBar"></div>
+      </div>
+      <div style="font-size:.7rem;color:rgba(255,255,255,.35);margin-top:6px">4 aur referrals chahiye Silver ke liye — unlock hoga 🪙700/ref!</div>
+    </div>
+
+    <!-- Referred list -->
+    <div style="margin:0 16px 8px;font-size:.65rem;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.35)">REFERRED CUSTOMERS</div>
+    <div class="dk-referred-list" id="dkRefList"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     TAP BATTLE ROYALE SCREEN
+══════════════════════════════════ -->
+<div class="screen" id="screen-tapbattle" style="background:#07090e;flex-direction:column;position:relative;overflow:hidden;">
+
+  <!-- LOBBY -->
+  <div id="tb-lobby" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px;">
+    <div style="font-family:var(--head);font-size:2rem;color:#f0c040;text-align:center">🎯 TAP<span style="color:#ff4560"> BATTLE</span></div>
+    <div style="font-size:.75rem;color:rgba(255,255,255,.4);text-align:center;letter-spacing:2px">100 PLAYERS • 60 SECONDS • WINNER TAKES ALL</div>
+    <div style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);padding:20px;text-align:center">
+      <div style="font-size:3rem;font-family:var(--head);color:#22d67a" id="tb-playercount">1</div>
+      <div style="font-size:.65rem;letter-spacing:3px;color:rgba(255,255,255,.35)">PLAYERS JOINED</div>
+      <div style="height:6px;background:rgba(255,255,255,.06);border-radius:3px;margin-top:14px;overflow:hidden"><div id="tb-lobbar" style="height:100%;width:1%;background:linear-gradient(90deg,#22d67a,#f0c040);border-radius:3px;transition:width .3s"></div></div>
+    </div>
+    <div style="width:100%;background:rgba(255,69,96,.06);border:1px solid rgba(255,69,96,.2);border-radius:var(--radius);padding:16px;text-align:center">
+      <div style="font-size:.65rem;letter-spacing:3px;color:rgba(255,255,255,.4)">GAME STARTS IN</div>
+      <div style="font-family:var(--head);font-size:3rem;color:#ff4560" id="tb-lobbytimer">30</div>
+    </div>
+    <!-- How to play -->
+    <div style="width:100%;background:rgba(255,255,255,.03);border-radius:var(--radius);padding:16px">
+      <div style="font-size:.7rem;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.4);margin-bottom:10px">HOW TO PLAY</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px;font-size:.8rem;color:rgba(255,255,255,.6)"><span style="font-size:1.4rem">🎯</span>Glowing targets screen pe aayenge</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.8rem;color:rgba(255,255,255,.6)"><span style="font-size:1.4rem">⚡</span>Jitni jaldi tap karo = zyada points</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.8rem;color:rgba(255,255,255,.6)"><span style="font-size:1.4rem">🔥</span>Combo banao — points double hote hain</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.8rem;color:rgba(255,255,255,.6)"><span style="font-size:1.4rem">🏆</span>Top 3 mein aao — coins jeeto!</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%">
+      <div style="background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.2);border-radius:10px;padding:12px;text-align:center"><div style="font-size:1.2rem">🥇</div><div style="font-family:var(--head);font-size:.95rem;color:#f0c040">🪙500</div><div style="font-size:.6rem;color:rgba(255,255,255,.35)">1ST PLACE</div></div>
+      <div style="background:rgba(192,192,192,.08);border:1px solid rgba(192,192,192,.2);border-radius:10px;padding:12px;text-align:center"><div style="font-size:1.2rem">🥈</div><div style="font-family:var(--head);font-size:.95rem;color:#c0c0c0">🪙300</div><div style="font-size:.6rem;color:rgba(255,255,255,.35)">2ND PLACE</div></div>
+      <div style="background:rgba(205,127,50,.08);border:1px solid rgba(205,127,50,.2);border-radius:10px;padding:12px;text-align:center"><div style="font-size:1.2rem">🥉</div><div style="font-family:var(--head);font-size:.95rem;color:#cd7f32">🪙150</div><div style="font-size:.6rem;color:rgba(255,255,255,.35)">3RD PLACE</div></div>
+    </div>
+  </div>
+
+  <!-- COUNTDOWN -->
+  <div id="tb-countdown" style="display:none;flex:1;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+    <div style="font-family:var(--head);font-size:7rem;color:#f0c040;text-shadow:0 0 60px rgba(240,192,64,.8)" id="tb-cdnum">3</div>
+    <div style="font-size:.9rem;letter-spacing:4px;color:rgba(255,255,255,.4)">GET READY!</div>
+  </div>
+
+  <!-- GAME ARENA -->
+  <div id="tb-arena" style="display:none;flex:1;flex-direction:column;position:relative;">
+    <!-- Top HUD -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(0,0,0,.5);position:relative;z-index:10">
+      <div style="text-align:center">
+        <div style="font-family:var(--head);font-size:1.8rem;color:#ff4560;line-height:1" id="tb-timer">60</div>
+        <div style="font-size:.55rem;letter-spacing:2px;color:rgba(255,255,255,.4)">SECONDS</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:var(--head);font-size:1.8rem;color:#f0c040;line-height:1" id="tb-score">0</div>
+        <div style="font-size:.55rem;letter-spacing:2px;color:rgba(255,255,255,.4)">YOUR SCORE</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:var(--head);font-size:1.8rem;color:#22d67a;line-height:1" id="tb-rank">50</div>
+        <div style="font-size:.55rem;letter-spacing:2px;color:rgba(255,255,255,.4)">RANK</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:var(--head);font-size:1.8rem;color:#c084fc;line-height:1" id="tb-combo">x1</div>
+        <div style="font-size:.55rem;letter-spacing:2px;color:rgba(255,255,255,.4)">COMBO</div>
+      </div>
+    </div>
+    <!-- Timer bar -->
+    <div style="height:4px;background:rgba(255,255,255,.08)"><div id="tb-timerbar" style="height:100%;width:100%;background:linear-gradient(90deg,#22d67a,#f0c040,#ff4560);transition:width 1s linear"></div></div>
+    <!-- Canvas -->
+    <canvas id="tb-canvas" style="flex:1;display:block;touch-action:none;cursor:crosshair"></canvas>
+    <!-- Live leaderboard -->
+    <div id="tb-liveLb" style="position:absolute;top:80px;right:8px;z-index:10;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 10px;min-width:110px"></div>
+    <!-- Combo popup -->
+    <div id="tb-combopop" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:20;font-family:var(--head);font-size:2rem;color:#f0c040;text-shadow:0 0 30px #f0c040;pointer-events:none;opacity:0;transition:opacity .3s"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="tb-result" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px">
+    <div style="font-size:5rem" id="tb-res-emoji">🏆</div>
+    <div style="font-family:var(--head);font-size:2.2rem;color:#f0c040" id="tb-res-title">CHAMPION!</div>
+    <div style="font-size:.85rem;color:rgba(255,255,255,.5)" id="tb-res-sub">Unbeatable fingers!</div>
+    <div style="width:100%;background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.2);border-radius:var(--radius);padding:20px;text-align:center">
+      <div style="font-size:.62rem;letter-spacing:3px;color:rgba(255,255,255,.4)">COINS EARNED</div>
+      <div style="font-family:var(--head);font-size:2.8rem;color:#f0c040" id="tb-res-coins">🪙 500</div>
+    </div>
+    <div style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);padding:16px">
+      <div style="font-size:.65rem;letter-spacing:2px;color:rgba(255,255,255,.4);margin-bottom:10px">YOUR STATS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+        <div><div style="font-family:var(--head);font-size:1.3rem;color:#fff" id="tb-res-score">0</div><div style="font-size:.6rem;color:rgba(255,255,255,.35)">SCORE</div></div>
+        <div><div style="font-family:var(--head);font-size:1.3rem;color:#fff" id="tb-res-hits">0</div><div style="font-size:.6rem;color:rgba(255,255,255,.35)">HITS</div></div>
+        <div><div style="font-family:var(--head);font-size:1.3rem;color:#fff" id="tb-res-maxcombo">0</div><div style="font-size:.6rem;color:rgba(255,255,255,.35)">MAX COMBO</div></div>
+      </div>
+    </div>
+    <!-- Full leaderboard -->
+    <div style="width:100%;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius);padding:14px">
+      <div style="font-size:.65rem;letter-spacing:2px;color:rgba(255,255,255,.4);margin-bottom:10px">TOP 10 PLAYERS</div>
+      <div id="tb-finalLb"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%">
+      <button onclick="tbPlayAgain()" style="padding:14px;background:linear-gradient(135deg,#ff4560,#c0152a);border:none;border-radius:var(--radius);color:#fff;font-family:var(--head);font-size:.95rem;cursor:pointer">🎯 Play Again</button>
+      <button onclick="afterTapBattle()" style="padding:14px;background:linear-gradient(135deg,var(--g-primary),var(--g-primary2));border:none;border-radius:var(--radius);color:#fff;font-family:var(--head);font-size:.95rem;cursor:pointer">🛒 Use Coins</button>
+    </div>
+  </div>
+</div>
+
+<!-- DB Status Bar -->
+<div id="dbStatusBar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;padding:8px 16px;text-align:center;font-size:.8rem;font-weight:700;color:#000;border-radius:0 0 10px 10px;transition:all .3s"></div>
+
+<script>
+// ══════════════════════════════════════════
+// SUPABASE DIRECT API (no SDK)
+// ══════════════════════════════════════════
+const SUPA_URL = 'https://qhqoeqstevflmqdinmkm.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFocW9lcXN0ZXZmbG1xZGlubWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMzU0OTAsImV4cCI6MjA4ODgxMTQ5MH0.Xk9Zx-MEw7w9z-fw98q9EXTlXkCmKXyhvcp_4GWuqew';
+const SUPA_HEADERS = {
+  'Content-Type': 'application/json',
+  'apikey': SUPA_KEY,
+  'Authorization': 'Bearer ' + SUPA_KEY
+};
+
+async function supaGet(table, query='') {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${table}?${query}&order=created_at.desc`, {
+    method: 'GET',
+    headers: SUPA_HEADERS,
+    mode: 'cors'
+  });
+  if(!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function supaInsert(table, data) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: { ...SUPA_HEADERS, 'Prefer': 'return=minimal' },
+    body: JSON.stringify(data),
+    mode: 'cors'
+  });
+  if(!res.ok) throw new Error(await res.text());
+}
+
+async function supaUpsert(table, data) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: { ...SUPA_HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify(data),
+    mode: 'cors'
+  });
+  if(!res.ok) throw new Error(await res.text());
+}
+
+async function supaDelete(table, id) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: SUPA_HEADERS,
+    mode: 'cors'
+  });
+  if(!res.ok) throw new Error(await res.text());
+}
+
+// ── Load products from Supabase ──
+async function dbLoadProducts() {
+  try {
+    const data = await supaGet('products', 'select=*');
+    if(data && data.length > 0) {
+      const dbProds = data.map(p => ({
+        id: p.id, n: p.name, e: p.emoji || '📦',
+        img: p.image_url || null, p: p.price,
+        u: p.unit || '1 pc', c: p.category || 'grocery',
+        fresh: p.is_fresh || false
+      }));
+      dbProds.forEach(d => { if(!PRODS.find(l => l.id === d.id)) PRODS.unshift(d); });
+      renderProducts(); renderProducts2(); renderAdminProducts();
+      showDBStatus('✅ Supabase se products load ho gaye!', 'g');
+    } else {
+      showDBStatus('📦 Local products dikh rahe hain', 'w');
+    }
+  } catch(e) {
+    console.warn('DB load failed:', e.message);
+    // Retry once after 2 seconds
+    setTimeout(async () => {
+      try {
+        const data = await supaGet('products', 'select=*');
+        if(data && data.length > 0) {
+          const dbProds = data.map(p => ({
+            id: p.id, n: p.name, e: p.emoji || '📦',
+            img: p.image_url || null, p: p.price,
+            u: p.unit || '1 pc', c: p.category || 'grocery',
+            fresh: p.is_fresh || false
+          }));
+          dbProds.forEach(d => { if(!PRODS.find(l => l.id === d.id)) PRODS.unshift(d); });
+          renderProducts(); renderProducts2(); renderAdminProducts();
+          showDBStatus('✅ Connected to Supabase!', 'g');
+        }
+      } catch(e2) {
+        showDBStatus('⚠️ Offline mode — local data use ho raha hai', 'w');
+      }
+    }, 2000);
+  }
+}
+
+// ── Save product ──
+async function dbSaveProduct(prod) {
+  try {
+    await supaUpsert('products', {
+      id: prod.id, name: prod.n, emoji: prod.e,
+      image_url: prod.img || null, price: prod.p,
+      unit: prod.u, category: prod.c, is_fresh: prod.fresh
+    });
+    showDBStatus('✅ Product Supabase mein save ho gaya!', 'g');
+  } catch(e) {
+    console.warn('DB save failed:', e.message);
+    showDBStatus('⚠️ Locally saved only', 'w');
+  }
+}
+
+// ── Delete product ──
+async function dbDeleteProduct(id) {
+  try { await supaDelete('products', id); }
+  catch(e) { console.warn('DB delete failed:', e.message); }
+}
+
+// ── Save order ──
+async function dbSaveOrder(order) {
+  try {
+    await supaInsert('orders', {
+      id: order.id, items: order.items,
+      total: order.total, coins_used: order.coinsUsed || 0,
+      status: 'confirmed'
+    });
+  } catch(e) { console.warn('DB order save failed:', e.message); }
+}
+
+// ── Log coins ──
+async function dbLogCoins(action, amount) {
+  try { await supaInsert('coins_log', { action, amount }); }
+  catch(e) { console.warn('DB coin log failed:', e.message); }
+}
+
+// ── Status bar ──
+function showDBStatus(msg, type) {
+  const el = document.getElementById('dbStatusBar');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.background = type==='g' ? 'rgba(34,214,122,0.95)' : 'rgba(240,192,64,0.95)';
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.display='none', 3000);
+}
+
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let coins = 1200;
+let cart = {};
+let mode = 'grocery'; // 'grocery' | 'p2e'
+let dailyClaimed = false;
+let refCount = 3; let refEarned = 600;
+let gsTabIdx = 0;
+const owned = { bikes:['b0'], outfits:['o0'], tracks:['tr0'], powers:[] };
+let equipped = { bike:'b0', outfit:'o0', track:'tr0' };
+
+// ══════════════════════════════════════════
+// PRODUCTS
+// ══════════════════════════════════════════
+const CATS = [
+  {id:'all',emoji:'🏪',label:'All'},
+  {id:'veg',emoji:'🥬',label:'Veggies'},
+  {id:'fruit',emoji:'🍎',label:'Fruits'},
+  {id:'chicken',emoji:'🍗',label:'Chicken'},
+  {id:'fish',emoji:'🐟',label:'Fish'},
+  {id:'dairy',emoji:'🥛',label:'Dairy'},
+  {id:'grocery',emoji:'🌾',label:'Grocery'},
+];
+const PRODS = [
+  {id:'v1',n:'Tomatoes',e:'🍅',u:'1 kg',p:40,c:'veg',fresh:true},
+  {id:'v2',n:'Onions',e:'🧅',u:'1 kg',p:35,c:'veg'},
+  {id:'v3',n:'Potatoes',e:'🥔',u:'1 kg',p:30,c:'veg',fresh:true},
+  {id:'v4',n:'Spinach',e:'🥬',u:'500g',p:25,c:'veg',fresh:true},
+  {id:'v5',n:'Carrots',e:'🥕',u:'500g',p:30,c:'veg'},
+  {id:'v6',n:'Capsicum',e:'🫑',u:'250g',p:35,c:'veg'},
+  {id:'v7',n:'Cauliflower',e:'🥦',u:'1 pc',p:45,c:'veg',fresh:true},
+  {id:'v8',n:'Brinjal',e:'🍆',u:'500g',p:28,c:'veg'},
+  {id:'f1',n:'Apples',e:'🍎',u:'1 kg',p:120,c:'fruit'},
+  {id:'f2',n:'Bananas',e:'🍌',u:'12 pcs',p:50,c:'fruit',fresh:true},
+  {id:'f3',n:'Mangoes',e:'🥭',u:'1 kg',p:80,c:'fruit',fresh:true},
+  {id:'f4',n:'Grapes',e:'🍇',u:'500g',p:60,c:'fruit'},
+  {id:'f5',n:'Oranges',e:'🍊',u:'6 pcs',p:70,c:'fruit'},
+  {id:'f6',n:'Watermelon',e:'🍉',u:'1 pc',p:90,c:'fruit'},
+  {id:'f7',n:'Papaya',e:'🍑',u:'1 kg',p:55,c:'fruit'},
+  {id:'f8',n:'Pomegranate',e:'❤️',u:'2 pcs',p:85,c:'fruit'},
+  {id:'ch1',n:'Chicken Breast',e:'🍗',u:'500g',p:180,c:'chicken',fresh:true},
+  {id:'ch2',n:'Whole Chicken',e:'🐔',u:'1 kg',p:220,c:'chicken',fresh:true},
+  {id:'ch3',n:'Chicken Legs',e:'🦵',u:'500g',p:160,c:'chicken'},
+  {id:'ch4',n:'Chicken Keema',e:'🫙',u:'500g',p:200,c:'chicken',fresh:true},
+  {id:'fi1',n:'Rohu Fish',e:'🐟',u:'1 kg',p:160,c:'fish',fresh:true},
+  {id:'fi2',n:'Prawns',e:'🦐',u:'500g',p:280,c:'fish'},
+  {id:'fi3',n:'Catla Fish',e:'🐠',u:'1 kg',p:180,c:'fish',fresh:true},
+  {id:'fi4',n:'Pomfret',e:'🐡',u:'500g',p:320,c:'fish'},
+  {id:'d1',n:'Amul Milk',e:'🥛',u:'1 litre',p:62,c:'dairy'},
+  {id:'d2',n:'Fresh Curd',e:'🧴',u:'500g',p:45,c:'dairy',fresh:true},
+  {id:'d3',n:'Paneer',e:'🧀',u:'200g',p:85,c:'dairy',fresh:true},
+  {id:'d4',n:'Butter',e:'🧈',u:'100g',p:58,c:'dairy'},
+  {id:'g1',n:'Basmati Rice',e:'🍚',u:'5 kg',p:350,c:'grocery'},
+  {id:'g2',n:'Wheat Atta',e:'🌾',u:'5 kg',p:230,c:'grocery'},
+  {id:'g3',n:'Toor Dal',e:'🫘',u:'1 kg',p:140,c:'grocery'},
+  {id:'g4',n:'Cooking Oil',e:'🫙',u:'1 litre',p:165,c:'grocery'},
+  {id:'g5',n:'Sugar',e:'🍬',u:'1 kg',p:45,c:'grocery'},
+  {id:'g6',n:'Salt',e:'🧂',u:'1 kg',p:22,c:'grocery'},
+];
+
+// ══════════════════════════════════════════
+// GAME ITEMS
+// ══════════════════════════════════════════
+const GS_ITEMS = [
+  [{emoji:'🚴',name:'Basic Rider',desc:'Starter bike — Free',cost:0,id:'b0'},
+   {emoji:'🚵',name:'Trail Blazer',desc:'+5% speed',cost:300,id:'b1'},
+   {emoji:'⚡🚴',name:'Electric Ace',desc:'+10% speed, glow',cost:500,id:'b2'},
+   {emoji:'🔥🚴',name:'Fire Blazer',desc:'+15% speed, flames',cost:800,id:'b3'},
+   {emoji:'💎🚴',name:'Diamond',desc:'Max speed',cost:2000,id:'b4'},
+   {emoji:'🌟🚵',name:'Legend',desc:'Rarest bike',cost:5000,id:'b5'}],
+  [{emoji:'👕',name:'Basic',desc:'Default look',cost:0,id:'o0'},
+   {emoji:'🧢',name:'Cap & Tee',desc:'Casual style',cost:200,id:'o1'},
+   {emoji:'🦊',name:'Fox Racer',desc:'Animal themed',cost:350,id:'o2'},
+   {emoji:'🥷',name:'Shadow Ninja',desc:'Dark stealth',cost:500,id:'o3'},
+   {emoji:'👑',name:'Champion',desc:'Gold crown',cost:1000,id:'o4'},
+   {emoji:'🚀',name:'Astro Rider',desc:'Space suit',cost:1500,id:'o5'}],
+  [{emoji:'⛰️',name:'Mountain Pass',desc:'Default track',cost:0,id:'tr0'},
+   {emoji:'🌴',name:'Jungle Trail',desc:'Dense forest',cost:500,id:'tr1'},
+   {emoji:'❄️',name:'Ice Peak',desc:'Frozen track',cost:700,id:'tr2'},
+   {emoji:'🌋',name:'Volcano Run',desc:'Lava sides',cost:1000,id:'tr3'},
+   {emoji:'🌊',name:'Coastal Cliff',desc:'Ocean views',cost:800,id:'tr4'},
+   {emoji:'🌃',name:'Night City',desc:'Neon urban',cost:1200,id:'tr5'}],
+  [{emoji:'⚡',name:'Speed Burst',desc:'+20% speed 10s',cost:100,id:'p0'},
+   {emoji:'🛡️',name:'Shield',desc:'Block 1 obstacle',cost:150,id:'p1'},
+   {emoji:'🧲',name:'Coin Magnet',desc:'+50 coins/race',cost:200,id:'p2'},
+   {emoji:'🌪️',name:'Tornado',desc:'Spin rivals',cost:300,id:'p3'},
+   {emoji:'🎯',name:'Precision',desc:'+2 rank/10s',cost:250,id:'p4'},
+   {emoji:'🔮',name:'Mystery Box',desc:'Random effect',cost:80,id:'p5'}],
+];
+
+// ══════════════════════════════════════════
+// MODE SWITCH
+// ══════════════════════════════════════════
+function toggleMode() {
+  if(mode==='grocery') {
+    mode='p2e';
+    document.getElementById('gNav').style.display='none';
+    document.getElementById('pNav').style.display='flex';
+    document.getElementById('modeFab').className='mode-fab p2e';
+    document.getElementById('modeFab').textContent='🛒';
+    document.getElementById('modeFab').title='Switch to Grocery';
+    hideAll(); showScreen('phome');
+    document.querySelectorAll('.p-nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById('pn-home').classList.add('active');
+    toast('🎮 P2E Mode — Race karke coins kamao!','i');
+  } else {
+    switchToGrocery();
+  }
+  syncCoins();
+}
+function switchToGrocery() {
+  mode='grocery';
+  document.getElementById('gNav').style.display='flex';
+  document.getElementById('pNav').style.display='none';
+  document.getElementById('modeFab').className='mode-fab grocery';
+  document.getElementById('modeFab').textContent='🎮';
+  document.getElementById('modeFab').title='Switch to P2E';
+  hideAll(); showScreen('ghome');
+  document.querySelectorAll('.g-nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('gn-home').classList.add('active');
+  toast('🛒 Grocery Mode — Fresh groceries!','g');
+  syncCoins();
+}
+
+function hideAll() {
+  document.querySelectorAll('.screen').forEach(s=>{
+    s.classList.remove('active');
+    s.style.display='none';
+  });
+}
+function showScreen(id) {
+  const el = document.getElementById('screen-'+id);
+  if(el){ el.classList.add('active'); el.style.display='flex'; }
+}
+
+// ══════════════════════════════════════════
+// GROCERY NAV
+// ══════════════════════════════════════════
+let gActiveCat='all';
+function gNav(page) {
+  hideAll();
+  document.querySelectorAll('.g-nav-item').forEach(n=>n.classList.remove('active'));
+  if(page==='home'){ showScreen('ghome'); document.getElementById('gn-home').classList.add('active'); renderCats('catRow','gSearch'); renderProducts(); }
+  else if(page==='store'){ showScreen('gstore-page'); document.getElementById('gn-store').classList.add('active'); renderCats('catRow2','gSearch2'); renderProducts2(); }
+  else if(page==='cart'){ showScreen('gcart'); document.getElementById('gn-cart').classList.add('active'); renderCart(); }
+  else if(page==='orders'){ showScreen('gorders'); document.getElementById('gn-orders').classList.add('active'); }
+  else if(page==='gprofile'){ showScreen('ggprofile'); document.getElementById('gn-gprofile').classList.add('active'); }
+  syncCoins();
+}
+
+// ══════════════════════════════════════════
+// P2E NAV
+// ══════════════════════════════════════════
+function pNav(page) {
+  if(page==='race'){ startTapBattle(); return; }
+  hideAll();
+  document.querySelectorAll('.p-nav-item').forEach(n=>n.classList.remove('active'));
+  if(page==='home'){ showScreen('phome'); document.getElementById('pn-home').classList.add('active'); }
+  else if(page==='dk'){ showScreen('dk'); document.getElementById('pn-dk').classList.add('active'); renderDkScreen(); }
+  else if(page==='gstore'){ showScreen('gstore'); document.getElementById('pn-gstore').classList.add('active'); renderGS(); }
+  else if(page==='pprofile'){ showScreen('pprofile'); document.getElementById('pn-pprofile').classList.add('active'); }
+  syncCoins();
+}
+
+// ══════════════════════════════════════════
+// COINS
+// ══════════════════════════════════════════
+function syncCoins() {
+  const f = n => n.toLocaleString('en-IN');
+  const ids=['gCoinDisp','gStoreCoinDisp','pCoinDisp','pWalletBig','ppCoinsDisp','gsCoinsDisp','gProfileCoins','ppCoinBig'];
+  ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=f(coins); });
+  const wi=document.getElementById('pWalletInr'); if(wi) wi.textContent=(coins/100).toFixed(2);
+  const cnt=Object.values(cart).reduce((s,q)=>s+q,0);
+  const dot=document.getElementById('cartDot');
+  if(dot){ dot.style.display=cnt>0?'block':'none'; dot.textContent=cnt; }
+}
+
+// ══════════════════════════════════════════
+// RENDER PRODUCTS
+// ══════════════════════════════════════════
+function renderCats(rowId, searchId) {
+  const row=document.getElementById(rowId); row.innerHTML='';
+  CATS.forEach(c=>{
+    const el=document.createElement('div'); el.className='cat-chip'+(c.id===gActiveCat?' active':'');
+    el.innerHTML=`<div class="cat-emoji">${c.emoji}</div><div class="cat-label">${c.label}</div>`;
+    el.onclick=()=>{ gActiveCat=c.id; renderCats(rowId,searchId); if(rowId==='catRow') renderProducts(); else renderProducts2(); };
+    row.appendChild(el);
+  });
+}
+
+function renderProducts() { _renderProd('prodGrid','gSearch',false); }
+function renderProducts2() { _renderProd('prodGrid2','gSearch2',false); }
+
+function _renderProd(gridId, searchId) {
+  const q=(document.getElementById(searchId)||{}).value||'';
+  const grid=document.getElementById(gridId); grid.innerHTML='';
+  PRODS.filter(p=>(gActiveCat==='all'||p.c===gActiveCat)&&(!q||p.n.toLowerCase().includes(q.toLowerCase()))).forEach(p=>{
+    const cb=Math.max(10,Math.floor(p.p/100*50));
+    const el=document.createElement('div'); el.className='prod-card';
+    // Show uploaded image or emoji
+    const imgContent = p.img
+      ? `<img src="${p.img}" style="width:100%;height:100%;object-fit:cover;border-radius:0">`
+      : `<span>${p.e}</span>`;
+    el.innerHTML=`<div class="prod-img-wrap"><div class="cashback-tag">🪙${cb}</div>${p.fresh?'<div class="fresh-tag">Fresh</div>':''}${imgContent}</div>
+    <div class="prod-body"><div class="prod-name">${p.n}</div><div class="prod-unit">${p.u}</div>
+    <div class="prod-footer"><div><div class="prod-price">₹${p.p}</div><div class="prod-cb">+🪙${cb} cashback</div></div>
+    <button class="add-btn-g" onclick="addToCart('${p.id}')">+</button></div></div>`;
+    grid.appendChild(el);
+  });
+  const st=document.getElementById('prodSectionTitle'); if(st) st.textContent=CATS.find(c=>c.id===gActiveCat)?.label+' Products'||'All Products';
+}
+
+function addToCart(id) {
+  cart[id]=(cart[id]||0)+1;
+  const p=PRODS.find(x=>x.id===id);
+  toast(`✅ ${p.n} added!`,'g');
+  syncCoins();
+}
+
+// ══════════════════════════════════════════
+// CART
+// ══════════════════════════════════════════
+function renderCart() {
+  const scroll=document.getElementById('cartScroll');
+  const items=Object.entries(cart).filter(([,q])=>q>0);
+  document.getElementById('cartItemCount').textContent=items.length+' items';
+  if(items.length===0){
+    scroll.innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:60px 20px;opacity:.5"><div style="font-size:5rem">🧺</div><div style="font-size:1rem;font-weight:700;color:var(--g-text)">Cart is empty</div><button onclick="gNav('store')" style="padding:12px 24px;background:var(--g-primary);border:none;border-radius:12px;color:#fff;font-family:var(--font);font-weight:700;cursor:pointer">Shop Now</button></div>`;
+    return;
+  }
+  let subtotal=0; let totalCb=0;
+  let html='<div style="padding-top:8px">';
+  items.forEach(([id,qty])=>{
+    const p=PRODS.find(x=>x.id===id); if(!p) return;
+    subtotal+=p.p*qty;
+    const cb=Math.max(10,Math.floor(p.p/100*50))*qty;
+    totalCb+=cb;
+    const ciImg = p.img
+      ? `<img src="${p.img}" style="width:42px;height:42px;object-fit:cover;border-radius:8px;border:1px solid rgba(0,0,0,.08)">`
+      : `<div class="ci-emoji">${p.e}</div>`;
+    html+=`<div class="cart-item-g">${ciImg}<div class="ci-info"><div class="ci-name">${p.n}</div><div class="ci-price">₹${p.p} × ${qty} = ₹${p.p*qty}</div><div class="ci-cb">+🪙${cb} cashback</div></div><div class="qty-row"><button class="qty-b" onclick="updCart('${id}',-1)">−</button><div class="qty-v">${qty}</div><button class="qty-b" onclick="updCart('${id}',1)">+</button></div></div>`;
+  });
+  html+=`</div>
+  <div class="coin-redeem">
+    <div class="cr-title">🪙 Redeem Coins</div>
+    <div class="cr-sub">1000 coins = ₹10 discount • Aapke paas 🪙${coins.toLocaleString('en-IN')}</div>
+    <div class="cr-input-row">
+      <input class="cr-input" type="number" id="redeemInput" placeholder="Enter coins (min 1000)" min="0" max="${coins}" step="1000" oninput="calcTotal(${subtotal})">
+      <button class="cr-apply" onclick="applyCoins(${subtotal})">Apply</button>
+    </div>
+    <div style="font-size:.72rem;color:var(--g-muted);margin-top:6px" id="redeemPreview">Enter coins to see discount</div>
+  </div>
+  <div class="g-summary">
+    <div class="sum-row"><span>Subtotal</span><span>₹${subtotal}</span></div>
+    <div class="sum-row"><span>Delivery</span><span style="color:var(--g-primary)">FREE 🎉</span></div>
+    <div class="sum-row" id="coinDiscRow" style="display:none"><span style="color:var(--g-coin)">🪙 Coin Discount</span><span style="color:var(--g-primary)" id="coinDiscAmt">-₹0</span></div>
+    <div class="sum-row"><span>Coin Cashback on this order</span><span class="sum-coin-earned">+🪙${totalCb}</span></div>
+    <div class="sum-row"><span>Total</span><span id="finalTotal">₹${subtotal}</span></div>
+  </div>
+  <div class="checkout-bar"><button class="checkout-btn" onclick="placeOrder(${subtotal},${totalCb})">✅ Place Order — ₹<span id="btnTotal">${subtotal}</span></button></div>`;
+  scroll.innerHTML=html;
+}
+
+let redeemCoins=0;
+function calcTotal(sub) {
+  const inp=document.getElementById('redeemInput'); if(!inp) return;
+  const v=Math.min(parseInt(inp.value)||0,coins);
+  redeemCoins=Math.floor(v/1000)*1000;
+  const disc=Math.floor(redeemCoins/1000)*10;
+  const final=Math.max(0,sub-disc);
+  const prev=document.getElementById('redeemPreview'); if(prev) prev.textContent=`🪙${redeemCoins.toLocaleString('en-IN')} = ₹${disc} discount`;
+  const dr=document.getElementById('coinDiscRow'); if(dr) dr.style.display=disc>0?'flex':'none';
+  const da=document.getElementById('coinDiscAmt'); if(da) da.textContent='-₹'+disc;
+  const ft=document.getElementById('finalTotal'); if(ft) ft.textContent='₹'+final;
+  const bt=document.getElementById('btnTotal'); if(bt) bt.textContent=final;
+}
+function applyCoins(sub) {
+  const inp=document.getElementById('redeemInput'); if(!inp) return;
+  const v=parseInt(inp.value)||0;
+  if(v>coins){toast('❌ Itne coins nahi hain!','e');return;}
+  if(v%1000!==0){toast('⚠️ 1000 ke multiple mein enter karo','e');return;}
+  calcTotal(sub);
+  toast(`✅ 🪙${redeemCoins} coins applied — ₹${Math.floor(redeemCoins/1000)*10} discount!`,'coin');
+}
+function updCart(id,d) { cart[id]=(cart[id]||0)+d; if(cart[id]<=0) delete cart[id]; syncCoins(); renderCart(); }
+
+function placeOrder(sub, cbCoins) {
+  const disc=Math.floor(redeemCoins/1000)*10;
+  const final=Math.max(0,sub-disc);
+  if(redeemCoins>0) coins-=redeemCoins;
+  coins+=cbCoins;
+  const orderId='ord'+Date.now();
+  // Save to Supabase
+  dbSaveOrder({ id:orderId, items:cart, total:final, coinsUsed:redeemCoins });
+  dbLogCoins('grocery_cashback', cbCoins);
+  cart={}; redeemCoins=0;
+  syncCoins();
+  addPActivity(`Grocery Order ₹${final} — Cashback earned`,'🛒',`+🪙${cbCoins}`,'plus');
+  launchConfetti();
+  toast(`✅ Order placed! ₹${final} paid • +🪙${cbCoins} cashback earned!`,'coin');
+  setTimeout(()=>gNav('orders'),1600);
+}
+
+// ══════════════════════════════════════════
+// GAME STORE
+// ══════════════════════════════════════════
+function gsTab(i,el) {
+  gsTabIdx=i;
+  document.querySelectorAll('.gs-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active'); renderGS();
+}
+function renderGS() {
+  const grid=document.getElementById('gsGrid'); grid.innerHTML='';
+  const typeMap=['bikes','outfits','tracks','powers'];
+  const type=typeMap[gsTabIdx];
+  GS_ITEMS[gsTabIdx].forEach(item=>{
+    const isOwned=owned[type]?.includes(item.id)||item.cost===0;
+    const isEq=(gsTabIdx===0&&equipped.bike===item.id)||(gsTabIdx===1&&equipped.outfit===item.id)||(gsTabIdx===2&&equipped.track===item.id);
+    const d=document.createElement('div');
+    d.className='gs-item'+(isEq?' equipped':isOwned?' owned':'');
+    let btn='';
+    if(isEq) btn=`<div style="font-size:.7rem;color:var(--p-gold);font-weight:800">⚡ EQUIPPED</div>`;
+    else if(isOwned) btn=`<button class="btn btn-ghost-p btn-sm" style="width:100%" onclick="gsEquip('${type}','${item.id}',${gsTabIdx})">⚡ Equip</button>`;
+    else btn=`<button class="btn btn-gold-p btn-sm" style="width:100%" onclick="gsBuy('${type}','${item.id}',${item.cost})">🪙 ${item.cost}</button>`;
+    d.innerHTML=`<span class="gs-emoji">${item.emoji}</span><div class="gs-name">${item.name}</div><div class="gs-desc">${item.desc}</div>${item.cost>0&&!isOwned?`<div class="gs-cost">🪙${item.cost}</div>`:''} ${btn}`;
+    grid.appendChild(d);
+  });
+  const el=document.getElementById('gsCoinsDisp'); if(el) el.textContent=coins.toLocaleString('en-IN');
+}
+function gsBuy(type,id,cost) {
+  if(coins<cost){toast('❌ Coins km hain! Race jeet ke earn karo','e');return;}
+  coins-=cost;
+  if(!owned[type]) owned[type]=[];
+  owned[type].push(id);
+  if(type==='bikes') equipped.bike=id;
+  if(type==='outfits') equipped.outfit=id;
+  if(type==='tracks') equipped.track=id;
+  syncCoins(); renderGS();
+  toast('✅ Purchased & Equipped!','coin');
+  addPActivity(`Game Store — Item bought`,'🎮',`-🪙${cost}`,'minus');
+}
+function gsEquip(type,id,tab) {
+  if(tab===0) equipped.bike=id;
+  if(tab===1) equipped.outfit=id;
+  if(tab===2) equipped.track=id;
+  renderGS(); toast('⚡ Equipped!','i');
+}
+
+// ══════════════════════════════════════════
+// DAILY + REFERRAL
+// ══════════════════════════════════════════
+function claimDaily() {
+  if(dailyClaimed){toast('✅ Aaj ka bonus already liya!','i');return;}
+  coins+=50; dailyClaimed=true; syncCoins();
+  addPActivity('Daily Login Bonus','🎁','+🪙50','plus');
+  toast('🎁 Daily Bonus! +🪙50 coins credited!','coin');
+}
+function simulateRef() {
+  coins+=200; refCount++; refEarned+=200; syncCoins();
+  document.getElementById('refCount').textContent=refCount;
+  document.getElementById('refEarned').textContent=refEarned.toLocaleString('en-IN');
+  const rc2=document.getElementById('refCount2'); if(rc2) rc2.textContent=refCount;
+  const re2=document.getElementById('refEarned2'); if(re2) re2.textContent=refEarned.toLocaleString('en-IN');
+  addPActivity(`Referral — New friend joined`,'👥','+🪙200','plus');
+  toast('👥 Referral! +🪙200 coins earned!','coin');
+  launchConfetti();
+}
+function copyRef() { toast('📋 Code copied: CYCLE7749 — Share karo!','i'); }
+
+// ══════════════════════════════════════════
+// P2E ACTIVITY
+// ══════════════════════════════════════════
+function addPActivity(title,icon,c,type) {
+  const feed=document.getElementById('pActivity'); if(!feed) return;
+  const r=document.createElement('div'); r.className='act-row';
+  r.innerHTML=`<div class="act-ic">${icon}</div><div class="act-inf"><div class="act-t">${title}</div><div class="act-d">Just now</div></div><div class="act-c act-${type}">${c}</div>`;
+  feed.prepend(r);
+  if(feed.children.length>6) feed.removeChild(feed.lastChild);
+}
+
+// ══════════════════════════════════════════
+// ADS + LOBBY + RACE
+// ══════════════════════════════════════════
+const ADS=[
+  {emoji:'📱',brand:'CashKaro',desc:'Har purchase pe cashback pao! India ka #1 cashback app.'},
+  {emoji:'🎮',brand:'MPL Gaming',desc:"India ka biggest gaming platform! Real prizes jeeto."}
+];
+let adIdx2=0, adInt2=null;
+
+function startAdFlow() {
+  adIdx2=0;
+  hideAll();
+  showScreen('ads');
+  playAd2(0);
+}
+
+function playAd2(i) {
+  const a = ADS[i];
+
+  // Update content
+  document.getElementById('adStepLbl').textContent = `AD ${i+1} OF 2 — WATCH TO ENTER RACE`;
+  document.getElementById('adEmoji2').textContent = a.emoji;
+  document.getElementById('adBrand2').textContent = a.brand;
+  document.getElementById('adDesc2').textContent = a.desc;
+
+  // Reset timer
+  const TOTAL = 5; // 5 seconds
+  document.getElementById('adNum').textContent = TOTAL;
+  document.getElementById('adBar2').style.width = '0%';
+
+  // Dots
+  document.getElementById('adDot20').style.background = i===0 ? 'var(--p-gold)' : 'rgba(34,214,122,.8)';
+  document.getElementById('adDot21').style.background = i===1 ? 'var(--p-gold)' : 'rgba(255,255,255,.15)';
+
+  // Button — disabled at start
+  const btn = document.getElementById('adContBtn2');
+  const lbl = document.getElementById('adWaitLbl');
+  btn.style.opacity = '0.3';
+  btn.style.pointerEvents = 'none';
+  if(lbl) lbl.textContent = 'Please watch the ad completely...';
+
+  // Countdown
+  clearInterval(adInt2);
+  let s = TOTAL;
+  adInt2 = setInterval(()=>{
+    s--;
+    const el = document.getElementById('adNum');
+    const bar = document.getElementById('adBar2');
+    if(el) el.textContent = Math.max(0, s);
+    if(bar) bar.style.width = ((TOTAL - s) / TOTAL * 100) + '%';
+
+    if(s <= 0) {
+      clearInterval(adInt2);
+      // Enable button
+      const b = document.getElementById('adContBtn2');
+      const l = document.getElementById('adWaitLbl');
+      if(b){ b.style.opacity='1'; b.style.pointerEvents='auto'; }
+      if(l) l.textContent = i===0 ? '👆 Tap to watch Ad 2' : '👆 Tap to enter the race!';
+    }
+  }, 1000);
+}
+
+function adNext2() {
+  clearInterval(adInt2);
+  adIdx2++;
+  if(adIdx2 < 2) {
+    playAd2(adIdx2);
+  } else {
+    coins += 20;
+    syncCoins();
+    toast('+🪙20 coins for watching ads!', 'coin');
+    startLobby();
+  }
+}
+
+// Lobby
+const LNAMES=['Shadow','Blaze','Storm','Viper','Ghost','Titan','Nova','Reaper','Cobra','Ace','Fury','Flash'];
+const LEMOJIS=['🚴','🚵','🏇','🤸','🧗'];
+let lobPl=[];
+function startLobby() {
+  hideAll(); showScreen('lobby');
+  lobPl=[{n:'YOU',e:'🚴',me:true}];
+  document.getElementById('lobPlayers').innerHTML=''; renderLobPl();
+  let n=1,t=30;
+  document.getElementById('lobTimer2').textContent=t; document.getElementById('lobNum2').textContent=n;
+  const addI=setInterval(()=>{ if(n>=100){clearInterval(addI);return;} const add=Math.min(Math.floor(Math.random()*7)+2,100-n); for(let i=0;i<add;i++){n++;lobPl.push({n:LNAMES[Math.floor(Math.random()*LNAMES.length)]+'_'+Math.floor(Math.random()*999),e:LEMOJIS[Math.floor(Math.random()*LEMOJIS.length)],me:false});} document.getElementById('lobNum2').textContent=n; renderLobPl(); },300);
+  const tmrI=setInterval(()=>{ t--; document.getElementById('lobTimer2').textContent=t; document.getElementById('lobBar2').style.width=(t/30*100)+'%'; if(t<=0||n>=100){clearInterval(tmrI);clearInterval(addI);setTimeout(startRace2,500);} },1000);
+}
+function renderLobPl() {
+  const g=document.getElementById('lobPlayers'); g.innerHTML='';
+  lobPl.forEach(p=>{ const d=document.createElement('div'); d.className='l-chip'+(p.me?' me':''); d.innerHTML=`<span class="l-chip-e">${p.e}</span>${p.me?'⭐YOU':p.n.substring(0,7)}`; g.appendChild(d); });
+}
+
+// Race
+const RK={left:false,right:false,boost:false};
+const RE={canvas:null,ctx:null,W:0,H:0,speed:0,maxSpeed:65,boost:100,dist:6000,traveled:0,laneX:0,rank:50,alive:99,startTime:0,finished:false,roadOff:0,bgOff:0,rivals:[],trail:[],animId:null};
+
+function startRace2() {
+  cancelAnimationFrame(RE.animId);
+  hideAll();
+  showScreen('race');
+
+  // Wait 2 frames for DOM
+  let frames = 0;
+  function waitAndStart(){
+    frames++;
+    if(frames < 3){ requestAnimationFrame(waitAndStart); return; }
+
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const wrap = document.getElementById('raceWrap');
+    const canvas = document.getElementById('raceCanvas');
+
+    // Force canvas to fill screen
+    wrap.style.position='absolute';
+    wrap.style.top='0'; wrap.style.left='0';
+    wrap.style.width=W+'px'; wrap.style.height=H+'px';
+    canvas.style.position='absolute';
+    canvas.style.top='0'; canvas.style.left='0';
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    canvas.width = W; canvas.height = H;
+
+    RE.ctx = canvas.getContext('2d');
+    RE.W = W; RE.H = H;
+
+    // Reset game state
+    RE.speed=28; RE.boost=100; RE.traveled=0; RE.laneX=W/2;
+    RE.rank=50; RE.alive=99; RE.finished=false;
+    RE.roadOff=0; RE.bgOff=0; RE.trail=[];
+    RE.obstacles=[]; RE.powerups=[];
+    RE.activePowerup=null; RE.powerupTimer=0;
+    RE.shield=false; RE.ghost=false; RE.star=false;
+    RE.turbo=false; RE.freeze=false;
+    RE.hitFlash=0; RE.camShake=0;
+    RE.diffPhase=0; RE.maxSpeed=55;
+    RE.curveOffset=0; RE.curveSpeed=0; RE.curveMag=0;
+    RE.rivalMsgs=[]; RE.msgTimer=0;
+    RE.speedLines=[]; RE.cloudOff=0; RE.groundOff=0;
+    RE.score=0; RE.combo=0; RE.comboTimer=0;
+    RE.popups=[]; RE.tiltX=0;
+
+    document.getElementById('rFinish').style.display='none';
+    const oldCD = document.getElementById('rCountdown');
+    if(oldCD) oldCD.remove();
+
+    // Spawn rivals
+    RE.rivals = [];
+    for(let i=0;i<8;i++){
+      RE.rivals.push({
+        x: W*(0.25 + Math.random()*0.5),
+        y: H*(0.15 + Math.random()*0.25),
+        spd: 20 + Math.random()*20,
+        wobble: Math.random()*Math.PI*2,
+        emoji: LEMOJIS[i % LEMOJIS.length]
+      });
+    }
+
+    document.removeEventListener('keydown',rkd);
+    document.removeEventListener('keyup',rku);
+    document.addEventListener('keydown',rkd);
+    document.addEventListener('keyup',rku);
+
+    // Draw first frame immediately — no black screen
+    rDraw2();
+
+    // Countdown
+    const countEl = document.createElement('div');
+    countEl.id = 'rCountdown';
+    countEl.style.cssText = [
+      'position:absolute','top:0','left:0','right:0','bottom:0',
+      'z-index:99','display:flex','align-items:center',
+      'justify-content:center','font-size:6rem','font-weight:900',
+      'color:#f0c040','text-shadow:0 0 50px #f0c040',
+      'background:rgba(0,0,0,0.4)','pointer-events:none'
+    ].join(';');
+    wrap.appendChild(countEl);
+
+    let n = 3;
+    function tick(){
+      countEl.textContent = n > 0 ? n : '🏁 GO!';
+      if(n === 0){
+        setTimeout(()=>{
+          countEl.remove();
+          _startRaceLoop();
+        }, 600);
+      } else {
+        n--;
+        setTimeout(tick, 900);
+      }
+    }
+    tick();
+  }
+  requestAnimationFrame(waitAndStart);
+}
+
+function _startRaceLoop(){
+  cancelAnimationFrame(RE.animId);
+
+  // Rank update interval
+  const rankI = setInterval(()=>{
+    if(RE.finished){ clearInterval(rankI); return; }
+    if(RE.rank>1 && Math.random()<.4) RE.rank = Math.max(1, RE.rank-1);
+    if(RE.alive>4 && Math.random()<.3) RE.alive = Math.max(4, RE.alive - Math.floor(Math.random()*2+1));
+    const rr=document.getElementById('rRank'); if(rr) rr.textContent=RE.rank;
+    const ra=document.getElementById('rAlive'); if(ra) ra.textContent=RE.alive;
+    updateRLb();
+  }, 900);
+
+  let lastT = 0;
+  function loop(ts){
+    const dt = Math.min((ts - (lastT||ts)) / 1000, 0.05);
+    lastT = ts;
+    if(!RE.finished) rUpdate(dt);
+    rDraw2();
+    if(!RE.finished) RE.animId = requestAnimationFrame(loop);
+  }
+  RE.animId = requestAnimationFrame(loop);
+}
+function rkd(e){ if(e.key==='ArrowLeft'||e.key==='a') RK.left=true; if(e.key==='ArrowRight'||e.key==='d') RK.right=true; if(e.key===' '||e.key==='ArrowUp'){e.preventDefault();RK.boost=true;} }
+function rku(e){ if(e.key==='ArrowLeft'||e.key==='a') RK.left=false; if(e.key==='ArrowRight'||e.key==='d') RK.right=false; if(e.key===' '||e.key==='ArrowUp') RK.boost=false; }
+
+// ══════════════════════════════════════════
+// SOUND ENGINE (Web Audio API)
+// ══════════════════════════════════════════
+let audioCtx=null;
+function getAudio(){if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}return audioCtx;}
+function playTone(freq,dur,type='sine',vol=0.15,detune=0){
+  const a=getAudio();if(!a)return;
+  const o=a.createOscillator(),g=a.createGain();
+  o.connect(g);g.connect(a.destination);
+  o.type=type;o.frequency.value=freq;o.detune.value=detune;
+  g.gain.setValueAtTime(vol,a.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+dur);
+  o.start();o.stop(a.currentTime+dur);
+}
+function sndEngine(spd){if(Math.random()>.85){playTone(80+spd*1.2,.08,'sawtooth',0.04);}}
+function sndBoost(){playTone(440,.05,'square',.1);playTone(660,.08,'square',.08);playTone(880,.12,'sine',.06);}
+function sndCollect(){playTone(523,.08,'sine',.12);playTone(659,.08,'sine',.1);playTone(784,.15,'sine',.08);}
+function sndHit(){playTone(120,.18,'sawtooth',.2);playTone(80,.25,'square',.15);}
+function sndPowerup(t){const freqs={'shield':[330,440,550],'magnet':[220,440,880],'ghost':[180,240,180],'turbo':[400,600,900],'star':[523,659,784,1047],'freeze':[220,165,110]};const f=freqs[t]||[440,550];f.forEach((fr,i)=>setTimeout(()=>playTone(fr,.12,'sine',.12),i*60));}
+function sndRivalChat(){playTone(380,.05,'square',.04);}
+function sndFinish(rank){if(rank<=3){[523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>playTone(f,.2,'sine',.15),i*120));}else{playTone(330,.3,'sine',.1);playTone(277,.4,'sine',.08);}}
+function sndCountdown(n){playTone(n===0?880:440,.15,'sine',n===0?.2:.12);}
+
+// ══════════════════════════════════════════
+// OBSTACLE & POWERUP SYSTEM
+// ══════════════════════════════════════════
+const POWERUP_TYPES=[
+  {type:'turbo',emoji:'⚡',color:'#ffd700',desc:'+50% speed 8s'},
+  {type:'shield',emoji:'🛡️',color:'#38bdf8',desc:'Block next hit'},
+  {type:'magnet',emoji:'🧲',color:'#c084fc',desc:'+30 coins bonus'},
+  {type:'ghost',emoji:'👻',color:'#94a3b8',desc:'Pass obstacles 5s'},
+  {type:'star',emoji:'⭐',color:'#f0c040',desc:'Invincible 6s'},
+  {type:'freeze',emoji:'❄️',color:'#7dd3fc',desc:'Slow rivals 5s'},
+];
+const OBSTACLE_TYPES=[
+  {type:'rock',emoji:'🪨',color:'#64748b',w:28,h:18,pts:-1},
+  {type:'log',emoji:'🪵',color:'#92400e',w:45,h:14,pts:-1},
+  {type:'pothole',emoji:'⬛',color:'#1e293b',w:22,h:22,pts:-1},
+  {type:'oil',emoji:'🫧',color:'#0f172a',w:35,h:12,pts:-1},
+];
+
+// Extended RE state
+Object.assign(RE,{
+  obstacles:[],powerups:[],
+  activePowerup:null,powerupTimer:0,
+  shield:false,ghost:false,star:false,turbo:false,freeze:false,
+  hitFlash:0,
+  camShake:0,
+  diffPhase:0, // 0=easy 1=medium 2=hard
+  curveOffset:0, curveSpeed:0, curveMag:0,
+  rivalMsgs:[], msgTimer:0,
+  speedLines:[],
+  cloudOff:0,
+  groundOff:0,
+  score:0,
+  combo:0, comboTimer:0,
+  popups:[],
+});
+
+const RIVAL_MSGS=["Pakad lo!","Slow ho gaya?","Haha!","Chal faster!","GG!","Noob!","Race on!","Bye bye!","🔥🔥","Arre bhai!"];
+const DIFF_PHASES=[
+  {name:'EASY',maxSpd:55,obsRate:0.008,rivSpd:18,curveMax:0.12,label:'🟢'},
+  {name:'MEDIUM',maxSpd:68,obsRate:0.018,rivSpd:26,curveMax:0.22,label:'🟡'},
+  {name:'HARD',maxSpd:85,obsRate:0.032,rivSpd:36,curveMax:0.35,label:'🔴'},
+];
+
+function spawnObstacle(W,H){
+  const type=OBSTACLE_TYPES[Math.floor(Math.random()*OBSTACLE_TYPES.length)];
+  const roadL=W/2-W*.36, roadR=W/2+W*.36;
+  return {
+    ...type,
+    x:roadL+Math.random()*(roadR-roadL),
+    y:-30,
+    speed:80+Math.random()*60,
+  };
+}
+function spawnPowerup(W){
+  const type=POWERUP_TYPES[Math.floor(Math.random()*POWERUP_TYPES.length)];
+  const roadL=W/2-W*.3, roadR=W/2+W*.3;
+  return{...type,x:roadL+Math.random()*(roadR-roadL),y:-30,speed:55,pulse:0,collected:false};
+}
+function activatePowerup(type){
+  RE.activePowerup=type; RE.powerupTimer=6;
+  RE.turbo=RE.shield=RE.ghost=RE.star=RE.freeze=false;
+  if(type==='turbo'){RE.turbo=true;RE.maxSpeed=90;}
+  if(type==='shield'){RE.shield=true;}
+  if(type==='ghost'){RE.ghost=true;}
+  if(type==='star'){RE.star=true;}
+  if(type==='freeze'){RE.freeze=true;}
+  if(type==='magnet'){coins+=30;syncCoins();addPActivity('Coin Magnet activated!','🧲','+🪙30','plus');}
+  sndPowerup(type);
+  const info=POWERUP_TYPES.find(p=>p.type===type);
+  showPopup(info?.emoji+' '+info?.desc,'#f0c040');
+}
+function showPopup(txt,col='#fff'){
+  RE.popups.push({txt,col,y:RE.H*.55,life:1.5,vy:-60});
+}
+
+function rUpdate(dt) {
+  // ── Dynamic Difficulty ──
+  const prog=RE.traveled/RE.dist;
+  const newPhase = prog<0.35?0:prog<0.7?1:2;
+  if(newPhase!==RE.diffPhase){
+    RE.diffPhase=newPhase;
+    const ph=DIFF_PHASES[newPhase];
+    RE.maxSpeed=ph.maxSpd;
+    showPopup(ph.label+' '+ph.name+' MODE','#ff6b35');
+    sndCountdown(newPhase);
+    if(newPhase===1) toast('🟡 Medium Mode! Controls tighter!','i');
+    if(newPhase===2) toast('🔴 HARD MODE! Hold tight!','e');
+  }
+  const phase=DIFF_PHASES[RE.diffPhase];
+
+  // ── Power-up timer ──
+  if(RE.activePowerup&&RE.powerupTimer>0){
+    RE.powerupTimer-=dt;
+    if(RE.powerupTimer<=0){
+      RE.turbo=RE.shield=RE.ghost=RE.star=RE.freeze=false;
+      if(RE.activePowerup==='turbo') RE.maxSpeed=phase.maxSpd;
+      RE.activePowerup=null;
+    }
+  }
+
+  // ── Speed & boost ──
+  const boostMult=RK.boost&&RE.boost>0?1:0;
+  const turboAdd=RE.turbo?18:0;
+  if(boostMult){RE.speed=Math.min(RE.maxSpeed+turboAdd+22,RE.speed+55*dt);RE.boost=Math.max(0,RE.boost-32*dt);sndBoost();}
+  else{RE.speed+=(RE.maxSpeed+turboAdd-RE.speed)*dt*2.2;RE.boost=Math.min(100,RE.boost+12*dt);}
+
+  // ── Tilt / device motion ──
+  if(typeof RE.tiltX==='number'&&Math.abs(RE.tiltX)>3){
+    RE.laneX+=RE.tiltX*2.5*dt*60;
+  }
+
+  // ── Steering with curve offset ──
+  const spd=200+RE.diffPhase*40;
+  if(RK.left) RE.laneX=Math.max(RE.W*.1,RE.laneX-spd*dt);
+  if(RK.right) RE.laneX=Math.min(RE.W*.9,RE.laneX+spd*dt);
+
+  // ── Road curve ──
+  RE.curveOffset+=RE.curveSpeed*dt;
+  RE.curveSpeed+=(RE.curveMag-RE.curveOffset)*0.4*dt;
+  if(Math.random()<0.004*(RE.diffPhase+1)){
+    RE.curveMag=(Math.random()-0.5)*2*phase.curveMax*RE.W;
+  }
+  // Push player with curve naturally
+  RE.laneX+=RE.curveSpeed*dt*0.35;
+  RE.laneX=Math.max(RE.W*.08,Math.min(RE.W*.92,RE.laneX));
+
+  RE.traveled+=RE.speed*dt*.85;
+  RE.roadOff=(RE.roadOff+RE.speed*dt*4)%90;
+  RE.bgOff=(RE.bgOff+RE.speed*dt*.28)%500;
+  RE.cloudOff=(RE.cloudOff+RE.speed*dt*.05)%RE.W;
+  RE.groundOff=(RE.groundOff+RE.speed*dt*2.5)%60;
+
+  // ── Spawn obstacles ──
+  if(!RE.ghost&&!RE.star&&Math.random()<phase.obsRate*(1+RE.diffPhase*.5)){
+    RE.obstacles.push(spawnObstacle(RE.W,RE.H));
+  }
+  // ── Spawn powerups ──
+  if(Math.random()<0.004) RE.powerups.push(spawnPowerup(RE.W));
+
+  // ── Update obstacles ──
+  const playerY=RE.H*.78, playerR=20;
+  RE.obstacles=RE.obstacles.filter(o=>{
+    o.y+=o.speed*dt*(1+RE.diffPhase*.3);
+    // Collision
+    if(!RE.ghost&&!RE.star&&o.y>playerY-22&&o.y<playerY+18&&Math.abs(o.x-RE.laneX)<playerR+o.w/2){
+      if(RE.shield){RE.shield=false;RE.activePowerup=null;showPopup('🛡️ Shield blocked!','#38bdf8');sndCollect();return false;}
+      RE.speed*=0.38; RE.camShake=0.4; RE.hitFlash=0.5; RE.combo=0;
+      sndHit(); showPopup('💥 HIT! Slow down!','#ff4560');
+      return false;
+    }
+    return o.y<RE.H+40;
+  });
+
+  // ── Update powerups ──
+  RE.powerups=RE.powerups.filter(p=>{
+    p.y+=(p.speed||55)*dt; p.pulse+=dt*4;
+    if(!p.collected&&p.y>playerY-28&&p.y<playerY+20&&Math.abs(p.x-RE.laneX)<playerR+18){
+      p.collected=true; activatePowerup(p.type); sndCollect(); return false;
+    }
+    return p.y<RE.H+30;
+  });
+
+  // ── Rivals ──
+  const rivSpd=RE.freeze?phase.rivSpd*0.3:phase.rivSpd;
+  RE.rivals.forEach(r=>{
+    r.wobble+=dt*(1.5+RE.diffPhase*.4);
+    r.x+=Math.sin(r.wobble)*(0.5+RE.diffPhase*.3);
+    r.y-=rivSpd*dt*.12;
+    if(r.y<RE.H*.06) r.y=RE.H*.62;
+  });
+
+  // ── Rival chat bubbles ──
+  RE.msgTimer-=dt;
+  if(RE.msgTimer<=0&&Math.random()<0.08){
+    RE.msgTimer=2.5+Math.random()*3;
+    const r=RE.rivals[Math.floor(Math.random()*RE.rivals.length)];
+    RE.rivalMsgs.push({x:r.x,y:r.y,txt:RIVAL_MSGS[Math.floor(Math.random()*RIVAL_MSGS.length)],life:2});
+    sndRivalChat();
+  }
+  RE.rivalMsgs=RE.rivalMsgs.filter(m=>{m.life-=dt;m.y-=15*dt;return m.life>0;});
+
+  // ── Trail ──
+  const trailCol=RE.star?'#ffd700':RE.turbo?'#ff6b35':RE.ghost?'rgba(180,180,255':'rgba(255,150,0';
+  if(RE.speed>15) RE.trail.push({x:RE.laneX+(-10+Math.random()*20),y:RE.H*.78,life:1,r:2+Math.random()*3,col:trailCol});
+  RE.trail=RE.trail.filter(p=>{p.y-=16*dt;p.life-=dt*2.6;return p.life>0;});
+
+  // ── Speed lines ──
+  if(RE.speed>55&&Math.random()>.6) RE.speedLines.push({x:Math.random()*RE.W,y:0,len:30+Math.random()*60,spd:RE.speed*5,life:1});
+  RE.speedLines=RE.speedLines.filter(s=>{s.y+=s.spd*dt;s.life-=dt*4;return s.life>0&&s.y<RE.H;});
+
+  // ── Combo ──
+  if(RE.speed>RE.maxSpeed*.85){RE.combo+=dt;RE.comboTimer=1;}
+  else{RE.comboTimer-=dt;if(RE.comboTimer<0)RE.combo=0;}
+
+  // ── Popups ──
+  RE.popups=RE.popups.filter(p=>{p.y+=p.vy*dt;p.vy*=0.92;p.life-=dt;return p.life>0;});
+
+  // ── Camera shake decay ──
+  RE.camShake*=0.85;
+  RE.hitFlash=Math.max(0,RE.hitFlash-dt*2);
+
+  // ── Score ──
+  RE.score+=Math.round(RE.speed*dt*(1+RE.combo*.1));
+
+  // ── HUD updates ──
+  sndEngine(RE.speed);
+  document.getElementById('rSpd').textContent=Math.round(RE.speed);
+  const pr=Math.min(1,RE.traveled/RE.dist);
+  document.getElementById('rPF').style.width=(pr*100)+'%';
+  document.getElementById('rDL').textContent=((RE.dist-RE.traveled)/1000).toFixed(2)+' KM';
+  document.getElementById('rBF').style.width=RE.boost+'%';
+
+  // Powerup HUD
+  const puEl=document.getElementById('rPowerupHud');
+  if(puEl){if(RE.activePowerup){const info=POWERUP_TYPES.find(p=>p.type===RE.activePowerup);puEl.innerHTML=`${info?.emoji||'⚡'} ${RE.powerupTimer.toFixed(1)}s`;puEl.style.display='block';}else{puEl.style.display='none';}}
+  // Difficulty HUD
+  const dEl=document.getElementById('rDiffHud');
+  if(dEl){const ph=DIFF_PHASES[RE.diffPhase];dEl.textContent=ph.label+' '+ph.name;dEl.style.color=RE.diffPhase===0?'#22d67a':RE.diffPhase===1?'#ffa500':'#ff4560';}
+
+  if(RE.traveled>=RE.dist){RE.finished=true;document.removeEventListener('keydown',rkd);document.removeEventListener('keyup',rku);sndFinish(RE.rank);setTimeout(showRaceResult2,400);}
+}
+
+function rDraw2() {
+  const c = RE.ctx;
+  if(!c) return;
+  const W = RE.W, H = RE.H;
+  const now = Date.now();
+
+  // Camera shake
+  const shX = RE.camShake>0 ? (Math.random()-.5)*RE.camShake*14 : 0;
+  const shY = RE.camShake>0 ? (Math.random()-.5)*RE.camShake*8 : 0;
+  c.save(); c.translate(shX, shY);
+
+  // ═══════════════════════════════════
+  // SKY — deep twilight gradient
+  // ═══════════════════════════════════
+  const sky = c.createLinearGradient(0,0,0,H*0.52);
+  sky.addColorStop(0,   '#010408');
+  sky.addColorStop(0.3, '#040d1a');
+  sky.addColorStop(0.7, '#0a1e35');
+  sky.addColorStop(1,   '#1a3a2a');
+  c.fillStyle = sky; c.fillRect(0,0,W,H*0.54);
+
+  // ═══════════════════════════════════
+  // STARS — many, twinkling
+  // ═══════════════════════════════════
+  const STARS = [
+    [0.04,0.04],[0.11,0.07],[0.19,0.03],[0.27,0.09],[0.35,0.05],
+    [0.43,0.11],[0.51,0.03],[0.59,0.08],[0.67,0.04],[0.75,0.1],
+    [0.83,0.06],[0.91,0.03],[0.97,0.09],[0.08,0.14],[0.22,0.16],
+    [0.38,0.13],[0.55,0.17],[0.7,0.12],[0.85,0.15],[0.95,0.18],
+    [0.15,0.21],[0.48,0.22],[0.78,0.2],[0.32,0.25],[0.62,0.23],
+  ];
+  STARS.forEach(([sx,sy],i)=>{
+    const a = 0.3 + Math.sin(now*0.0015*(1+i%4)+i*1.3)*0.5;
+    const r = i%5===0 ? 1.6 : 0.9;
+    c.fillStyle = i%7===0 ? `rgba(200,220,255,${a})` : `rgba(255,255,255,${a})`;
+    c.beginPath(); c.arc(sx*W, sy*H, r, 0,Math.PI*2); c.fill();
+  });
+
+  // ═══════════════════════════════════
+  // MOON — crescent style
+  // ═══════════════════════════════════
+  const mx=W*0.82, my=H*0.08;
+  // Moon glow
+  const mg = c.createRadialGradient(mx,my,5,mx,my,35);
+  mg.addColorStop(0,'rgba(255,245,200,0.15)'); mg.addColorStop(1,'rgba(255,245,200,0)');
+  c.fillStyle=mg; c.beginPath(); c.arc(mx,my,35,0,Math.PI*2); c.fill();
+  // Moon body
+  c.fillStyle='#fffde0'; c.beginPath(); c.arc(mx,my,16,0,Math.PI*2); c.fill();
+  // Crescent shadow
+  c.fillStyle='#040d1a'; c.beginPath(); c.arc(mx+6,my-2,13,0,Math.PI*2); c.fill();
+
+  // ═══════════════════════════════════
+  // AURORA / atmosphere haze
+  // ═══════════════════════════════════
+  const au = c.createLinearGradient(0,H*0.28,0,H*0.46);
+  au.addColorStop(0,'rgba(20,60,40,0)');
+  au.addColorStop(0.5,`rgba(15,45,30,${0.12+Math.sin(now*0.0007)*0.05})`);
+  au.addColorStop(1,'rgba(20,60,40,0)');
+  c.fillStyle=au; c.fillRect(0,H*0.28,W,H*0.18);
+
+  // ═══════════════════════════════════
+  // FAR MOUNTAINS — jagged, dark indigo
+  // ═══════════════════════════════════
+  const bOff = RE.bgOff*0.06;
+  c.fillStyle='#0c1830';
+  c.beginPath(); c.moveTo(-50, H*0.53);
+  const fm=[[0,0.5],[0.06,0.34],[0.11,0.44],[0.17,0.25],[0.23,0.38],
+    [0.29,0.19],[0.35,0.32],[0.41,0.16],[0.47,0.28],[0.53,0.13],
+    [0.59,0.26],[0.65,0.18],[0.71,0.31],[0.77,0.22],[0.83,0.14],
+    [0.89,0.28],[0.95,0.2],[1,0.35]];
+  fm.forEach(([x,y])=> c.lineTo(((x*W+bOff)%(W+100))-50, y*H));
+  c.lineTo(W+50,H*0.53); c.closePath(); c.fill();
+
+  // ═══════════════════════════════════
+  // MID MOUNTAINS — blue-grey, snow
+  // ═══════════════════════════════════
+  const mOff = RE.bgOff*0.13;
+  c.fillStyle='#16263c';
+  c.beginPath(); c.moveTo(-50, H*0.55);
+  const mm=[[0,0.53],[0.05,0.38],[0.1,0.47],[0.16,0.28],[0.22,0.42],
+    [0.28,0.22],[0.34,0.36],[0.4,0.18],[0.46,0.31],[0.52,0.14],
+    [0.58,0.27],[0.64,0.19],[0.7,0.33],[0.76,0.21],[0.82,0.15],
+    [0.88,0.29],[0.94,0.23],[1,0.38]];
+  const peaks=[];
+  mm.forEach(([x,y])=>{
+    const px=((x*W+mOff)%(W+100))-50, py=y*H;
+    c.lineTo(px, py);
+    if(y<0.22) peaks.push([px,py]);
+  });
+  c.lineTo(W+50,H*0.55); c.closePath(); c.fill();
+
+  // Snow on peaks
+  peaks.forEach(([px,py])=>{
+    const sg2=c.createLinearGradient(px,py,px,py+30);
+    sg2.addColorStop(0,'rgba(230,245,255,0.95)');
+    sg2.addColorStop(1,'rgba(180,210,240,0)');
+    c.fillStyle=sg2;
+    c.beginPath(); c.moveTo(px,py); c.lineTo(px-22,py+28); c.lineTo(px+22,py+28); c.closePath(); c.fill();
+    // Snow glint
+    c.fillStyle='rgba(255,255,255,0.6)';
+    c.beginPath(); c.arc(px-3,py+5,2,0,Math.PI*2); c.fill();
+  });
+
+  // ═══════════════════════════════════
+  // NEAR HILLS — dark forest green
+  // ═══════════════════════════════════
+  const nOff = RE.bgOff*0.32;
+  const ng = c.createLinearGradient(0,H*0.42,0,H*0.56);
+  ng.addColorStop(0,'#0e2016'); ng.addColorStop(1,'#081408');
+  c.fillStyle=ng;
+  c.beginPath(); c.moveTo(-50,H*0.57);
+  [[0,0.55],[0.08,0.45],[0.16,0.52],[0.24,0.42],[0.32,0.49],
+   [0.4,0.4],[0.48,0.47],[0.56,0.39],[0.64,0.46],[0.72,0.41],
+   [0.8,0.48],[0.88,0.43],[0.96,0.5],[1,0.55]].forEach(([x,y])=>{
+    c.lineTo(((x*W+nOff)%(W+100))-50, y*H);
+  });
+  c.lineTo(W+50,H*0.57); c.closePath(); c.fill();
+
+  // ═══════════════════════════════════
+  // GROUND — dark terrain
+  // ═══════════════════════════════════
+  const gg=c.createLinearGradient(0,H*0.52,0,H);
+  gg.addColorStop(0,'#0f1e0e'); gg.addColorStop(0.35,'#090f08'); gg.addColorStop(1,'#050a04');
+  c.fillStyle=gg; c.fillRect(0,H*0.52,W,H*0.5);
+
+  // Ground fog / mist at base of hills
+  const fog=c.createLinearGradient(0,H*0.5,0,H*0.6);
+  fog.addColorStop(0,'rgba(150,200,180,0.06)'); fog.addColorStop(1,'rgba(150,200,180,0)');
+  c.fillStyle=fog; c.fillRect(0,H*0.5,W,H*0.1);
+
+  // ═══════════════════════════════════
+  // ROAD — realistic perspective
+  // ═══════════════════════════════════
+  const vanY = H*0.515;
+  const cOff = RE.curveOffset*0.12;
+  const vanX = W/2 + cOff;
+  const topW = W*0.14;
+  const botW = W*0.96;
+
+  // Road surface
+  const rG=c.createLinearGradient(0,vanY,0,H);
+  rG.addColorStop(0,'#1c140a'); rG.addColorStop(0.4,'#241a0c'); rG.addColorStop(1,'#2e2010');
+  c.fillStyle=rG;
+  c.beginPath();
+  c.moveTo(vanX-topW/2, vanY);
+  c.lineTo(vanX+topW/2, vanY);
+  c.lineTo(W/2+botW/2+cOff*2, H+10);
+  c.lineTo(W/2-botW/2+cOff*2, H+10);
+  c.closePath(); c.fill();
+
+  // Road edge white lines
+  c.strokeStyle='rgba(255,255,255,0.12)'; c.lineWidth=2;
+  c.beginPath(); c.moveTo(vanX-topW/2,vanY); c.lineTo(W/2-botW/2+cOff*2,H+10); c.stroke();
+  c.beginPath(); c.moveTo(vanX+topW/2,vanY); c.lineTo(W/2+botW/2+cOff*2,H+10); c.stroke();
+
+  // Red/white kerb stripes
+  for(let i=0;i<10;i++){
+    const f=i/9;
+    const y=vanY+f*(H-vanY);
+    const hw=topW/2+(botW/2-topW/2)*f;
+    const cx3=vanX+(W/2-vanX)*f+cOff*f*2;
+    const kw=Math.max(3,(8+f*14)*f);
+    const stripe=Math.floor((f*10+RE.roadOff/60)%2)===0;
+    c.fillStyle=stripe?'rgba(220,40,30,0.85)':'rgba(255,255,255,0.7)';
+    c.fillRect(cx3-hw-kw,y-1.5,kw,3.5);
+    c.fillRect(cx3+hw,y-1.5,kw,3.5);
+  }
+
+  // Center dashes — yellow
+  for(let i=0;i<16;i++){
+    const f=((i/16)+RE.roadOff/700)%1;
+    const y=vanY+f*(H-vanY);
+    const hw2=(topW*0.04+(botW*0.04-topW*0.04)*f);
+    const cx4=vanX+(W/2-vanX)*f+cOff*f*2;
+    const dh=f*20+4;
+    c.fillStyle=`rgba(255,210,40,${f*0.9+0.05})`;
+    c.fillRect(cx4-hw2,y,hw2*2,dh);
+  }
+
+  // Road ambient occlusion (darkens edges)
+  const lShadow=c.createLinearGradient(0,H*0.52,W*0.22,H*0.52);
+  lShadow.addColorStop(0,'rgba(0,0,0,0.35)'); lShadow.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=lShadow; c.fillRect(0,H*0.52,W*0.22,H*0.5);
+  const rShadow=c.createLinearGradient(W,H*0.52,W*0.78,H*0.52);
+  rShadow.addColorStop(0,'rgba(0,0,0,0.35)'); rShadow.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=rShadow; c.fillRect(W*0.78,H*0.52,W*0.22,H*0.5);
+
+  // ═══════════════════════════════════
+  // PINE TREES — both sides, multi-layer
+  // ═══════════════════════════════════
+  const treeData=[
+    {x:0.01,s:1.1,side:-1},{x:0.05,s:0.8,side:-1},{x:0.1,s:0.95,side:-1},
+    {x:0.99,s:1.1,side:1},{x:0.95,s:0.82,side:1},{x:0.9,s:0.97,side:1},
+  ];
+  treeData.forEach(({x,s})=>{
+    const tx=x*W, by=H*(0.7+s*0.08), h=60*s, tw=20*s;
+    // Trunk
+    const trG=c.createLinearGradient(tx-2,by,tx+2,by);
+    trG.addColorStop(0,'#2a1008'); trG.addColorStop(1,'#1a0a04');
+    c.fillStyle=trG; c.fillRect(tx-3*s,by,5*s,h*0.3);
+    // 3 foliage layers with gradient
+    for(let j=0;j<3;j++){
+      const layH=h*(0.5-j*0.08), layW=tw*(1-j*0.18);
+      const layY=by-h*(0.35+j*0.22);
+      const fG=c.createLinearGradient(tx,layY,tx,layY+layH);
+      fG.addColorStop(0,j===0?'#162d10':'#0e2008');
+      fG.addColorStop(1,j===0?'#0e2008':'#08140a');
+      c.fillStyle=fG;
+      c.beginPath(); c.moveTo(tx,layY-layH*0.5);
+      c.lineTo(tx-layW,layY+layH*0.5);
+      c.lineTo(tx+layW,layY+layH*0.5);
+      c.closePath(); c.fill();
+      // Snow on tree tips (if near mountain area)
+      if(j===0 && s>0.9){
+        c.fillStyle='rgba(220,240,255,0.35)';
+        c.beginPath(); c.moveTo(tx,layY-layH*0.5);
+        c.lineTo(tx-layW*0.3,layY-layH*0.1);
+        c.lineTo(tx+layW*0.3,layY-layH*0.1);
+        c.closePath(); c.fill();
+      }
+    }
+  });
+
+  // ═══════════════════════════════════
+  // OBSTACLES — with 3D shadow
+  // ═══════════════════════════════════
+  RE.obstacles.forEach(o=>{
+    const f=Math.max(0.15,(o.y-vanY)/(H-vanY));
+    const sc=0.25+f*1.0;
+    // Ground shadow
+    c.globalAlpha=f*0.3; c.fillStyle='#000';
+    c.beginPath(); c.ellipse(o.x+3*sc,o.y+4,18*sc,5*sc,0,0,Math.PI*2); c.fill();
+    // Emoji
+    c.globalAlpha=0.6+f*0.4;
+    c.font=`${Math.round(26*sc)}px serif`;
+    c.fillText(o.emoji, o.x-13*sc, o.y);
+    c.globalAlpha=1;
+  });
+
+  // ═══════════════════════════════════
+  // POWERUPS — glowing orbs
+  // ═══════════════════════════════════
+  RE.powerups.forEach(p=>{
+    const f=Math.max(0.1,(p.y-vanY)/(H-vanY));
+    const sc=0.25+f*1.0;
+    const pulse=Math.sin(now*0.005+p.x)*0.4;
+    // Outer glow
+    const pg=c.createRadialGradient(p.x,p.y,0,p.x,p.y,22*sc);
+    pg.addColorStop(0,p.color+'aa'); pg.addColorStop(1,p.color+'00');
+    c.fillStyle=pg; c.beginPath(); c.arc(p.x,p.y,22*sc,0,Math.PI*2); c.fill();
+    c.shadowColor=p.color; c.shadowBlur=18*sc*(1+pulse);
+    c.font=`${Math.round(28*sc)}px serif`;
+    c.fillText(p.emoji, p.x-14*sc, p.y+pulse*3);
+    c.shadowBlur=0;
+  });
+
+  // ═══════════════════════════════════
+  // SPEED LINES — motion blur effect
+  // ═══════════════════════════════════
+  if(RE.speed>45){
+    const intensity=(RE.speed-45)/55;
+    RE.speedLines.forEach(sl=>{
+      c.strokeStyle=`rgba(255,255,255,${sl.life*intensity*0.28})`;
+      c.lineWidth=1.2;
+      c.beginPath(); c.moveTo(sl.x,sl.y); c.lineTo(sl.x,sl.y+sl.len*sl.life); c.stroke();
+    });
+  }
+
+  // ═══════════════════════════════════
+  // DUST TRAIL
+  // ═══════════════════════════════════
+  RE.trail.forEach(p=>{
+    c.globalAlpha=p.life*0.45;
+    const col=RE.star?'#ffd700':RE.turbo?'#ff6020':'#b06010';
+    c.fillStyle=col;
+    c.beginPath(); c.arc(p.x,p.y,p.r*p.life*1.2,0,Math.PI*2); c.fill();
+  });
+  c.globalAlpha=1;
+
+  // ═══════════════════════════════════
+  // RIVALS — depth-scaled
+  // ═══════════════════════════════════
+  RE.rivals.forEach(r=>{
+    const f=Math.max(0.08,r.y/H);
+    const sc=0.18+f*0.88;
+    c.globalAlpha=0.45+f*0.5;
+    // Shadow
+    c.fillStyle='rgba(0,0,0,0.25)';
+    c.beginPath(); c.ellipse(r.x+5*sc,r.y+5,14*sc,4*sc,0,0,Math.PI*2); c.fill();
+    c.font=`${Math.round(40*sc)}px serif`;
+    c.fillText(r.emoji, r.x-20*sc, r.y);
+    c.globalAlpha=1;
+  });
+
+  // ═══════════════════════════════════
+  // RIVAL CHAT BUBBLES
+  // ═══════════════════════════════════
+  RE.rivalMsgs.forEach(m=>{
+    const a=Math.min(1,m.life);
+    c.globalAlpha=a;
+    c.font='bold 11px sans-serif';
+    const tw=c.measureText(m.txt).width+18;
+    c.fillStyle='rgba(0,0,0,0.8)';
+    c.beginPath();
+    if(c.roundRect) c.roundRect(m.x-tw/2,m.y-30,tw,22,6);
+    else c.rect(m.x-tw/2,m.y-30,tw,22);
+    c.fill();
+    c.fillStyle='#fff'; c.textAlign='center';
+    c.fillText(m.txt,m.x,m.y-14);
+    c.textAlign='left'; c.globalAlpha=1;
+  });
+
+  // ═══════════════════════════════════
+  // PLAYER — with lighting
+  // ═══════════════════════════════════
+  const py=H*0.795;
+
+  // Player ground shadow
+  c.fillStyle='rgba(0,0,0,0.4)';
+  c.beginPath(); c.ellipse(RE.laneX+4,py+8,26,8,0,0,Math.PI*2); c.fill();
+
+  // Star/turbo glow under bike
+  if(RE.star||RE.turbo){
+    const bg=c.createRadialGradient(RE.laneX,py,0,RE.laneX,py,40);
+    const gc2=RE.star?'rgba(255,215,0,':'rgba(255,100,20,';
+    bg.addColorStop(0,gc2+'0.3)'); bg.addColorStop(1,gc2+'0)');
+    c.fillStyle=bg; c.beginPath(); c.arc(RE.laneX,py,40,0,Math.PI*2); c.fill();
+  }
+
+  c.save();
+  if(RE.star){ c.shadowColor='#ffd700'; c.shadowBlur=30; }
+  if(RE.ghost){ c.globalAlpha=0.45; }
+  if(RE.hitFlash>0){ c.globalAlpha=1-RE.hitFlash*0.7; }
+  c.font='50px serif';
+  c.fillText('🚴', RE.laneX-25, py);
+  c.restore();
+
+  // Shield bubble
+  if(RE.shield){
+    const sa=0.5+Math.sin(now*0.006)*0.25;
+    c.strokeStyle=`rgba(56,189,248,${sa})`; c.lineWidth=3;
+    c.beginPath(); c.arc(RE.laneX,py-10,34+Math.sin(now*0.004)*3,0,Math.PI*2); c.stroke();
+    const shG=c.createRadialGradient(RE.laneX,py-10,20,RE.laneX,py-10,38);
+    shG.addColorStop(0,'rgba(56,189,248,0.04)'); shG.addColorStop(1,'rgba(56,189,248,0)');
+    c.fillStyle=shG; c.beginPath(); c.arc(RE.laneX,py-10,38,0,Math.PI*2); c.fill();
+  }
+
+  // Speed streaks behind bike
+  if(RE.speed>50){
+    const sa2=(RE.speed-50)/60*0.5;
+    for(let i=0;i<7;i++){
+      c.strokeStyle=`rgba(255,180,50,${sa2*(1-i/7)*0.7})`;
+      c.lineWidth=2.5-i*0.28;
+      c.beginPath();
+      c.moveTo(RE.laneX-28-i*6, py-8-i*1.5);
+      c.lineTo(RE.laneX-52-i*6, py-8-i*1.5);
+      c.stroke();
+    }
+  }
+
+  // ═══════════════════════════════════
+  // SCREEN EFFECTS
+  // ═══════════════════════════════════
+  // Hit flash
+  if(RE.hitFlash>0){
+    c.fillStyle=`rgba(255,20,20,${RE.hitFlash*0.45})`;
+    c.fillRect(0,0,W,H);
+  }
+  // Star shimmer
+  if(RE.star){
+    c.fillStyle=`rgba(255,215,0,${0.06+Math.sin(now*0.012)*0.04})`;
+    c.fillRect(0,0,W,H);
+  }
+  // Turbo tunnel
+  if(RE.turbo){
+    const tunnel=c.createRadialGradient(W/2,H*0.5,H*0.1,W/2,H*0.5,W*0.8);
+    tunnel.addColorStop(0,'rgba(255,80,0,0)');
+    tunnel.addColorStop(1,`rgba(255,60,0,${0.08+Math.sin(now*0.02)*0.04})`);
+    c.fillStyle=tunnel; c.fillRect(0,0,W,H);
+  }
+
+  // ═══════════════════════════════════
+  // COMBO TEXT
+  // ═══════════════════════════════════
+  if(RE.combo>2){
+    c.font=`bold ${Math.min(18,11+RE.combo)}px sans-serif`;
+    c.fillStyle=`rgba(255,200,0,${Math.min(1,RE.combo/6)})`;
+    c.textAlign='right';
+    c.fillText(`🔥 x${Math.floor(RE.combo)} COMBO`, W-16, H*0.71);
+    c.textAlign='left';
+  }
+
+  // ═══════════════════════════════════
+  // POPUP TEXTS
+  // ═══════════════════════════════════
+  RE.popups.forEach(p=>{
+    c.globalAlpha=Math.min(1,p.life);
+    c.font='bold 16px sans-serif';
+    c.fillStyle=p.col; c.textAlign='center';
+    c.fillText(p.txt,W/2,p.y);
+    c.textAlign='left';
+  });
+  c.globalAlpha=1;
+
+  // ═══════════════════════════════════
+  // PROGRESS BAR (bottom)
+  // ═══════════════════════════════════
+  const pr=Math.min(1,RE.traveled/RE.dist);
+  c.fillStyle='rgba(0,0,0,0.7)'; c.fillRect(0,H-12,W,12);
+  const pG=c.createLinearGradient(0,0,W,0);
+  pG.addColorStop(0,'#22d67a'); pG.addColorStop(0.5,'#f0c040'); pG.addColorStop(1,'#ff4560');
+  c.fillStyle=pG; c.fillRect(0,H-12,W*pr,12);
+  // Checkpoint markers
+  [0.25,0.5,0.75].forEach(cp=>{
+    c.fillStyle=pr>=cp?'rgba(255,255,255,0.6)':'rgba(255,255,255,0.25)';
+    c.fillRect(W*cp-1,H-12,2,12);
+  });
+
+  // Finish near warning
+  if(pr>0.85){
+    c.fillStyle=`rgba(240,192,64,${0.06+Math.sin(now*0.01)*0.05})`;
+    c.fillRect(0,0,W,H);
+    c.fillStyle='rgba(240,192,64,0.95)';
+    c.font='bold 20px sans-serif'; c.textAlign='center';
+    c.fillText('🏁 FINISH LINE NEAR!', W/2, H*0.44);
+    c.textAlign='left';
+  }
+
+  c.restore();
+}
+
+
+
+function updateRLb() {
+  const lb=document.getElementById('rMiniLb');if(!lb)return;
+  let html='';
+  for(let i=0;i<Math.min(3,RE.rank-1);i++) html+=`<div style="font-size:.65rem;color:rgba(255,255,255,.6);padding:2px 0">${'🥇🥈🥉'[i]} #${i+1} ${LNAMES[i]}</div>`;
+  html+=`<div style="font-size:.65rem;color:#f0c040;font-weight:800;padding:2px 0">🚴 #${RE.rank} YOU ⭐</div>`;
+  lb.innerHTML=html;
+}
+
+function showRaceResult2() {
+  const rank=RE.rank;
+  let emoji,title,sub,earned;
+  if(rank===1){emoji='🏆';title='CHAMPION!';sub='Mountain ka Raja!';earned=500;}
+  else if(rank===2){emoji='🥈';title='2ND PLACE!';sub='Silver finish!';earned=300;}
+  else if(rank===3){emoji='🥉';title='3RD PLACE!';sub='Podium finish!';earned=150;}
+  else if(rank<=10){emoji='⚡';title=`RANK #${rank}`;sub='Top 10!';earned=50;}
+  else{emoji='🚴';title=`RANK #${rank}`;sub='Race again!';earned=10;}
+  coins+=earned; syncCoins();
+  document.getElementById('rfE').textContent=emoji;
+  document.getElementById('rfT').textContent=title;
+  document.getElementById('rfT').style.color=rank<=3?'#f0c040':'#eef2ff';
+  document.getElementById('rfS').textContent=sub;
+  document.getElementById('rfC').textContent=`🪙 ${earned}`;
+  document.getElementById('rFinish').style.display='flex';
+  addPActivity(`Race — ${title}`,'🏁',`+🪙${earned}`,'plus');
+  if(rank<=3) launchConfetti();
+}
+
+function afterRace(dest) {
+  cancelAnimationFrame(RE.animId);
+  document.removeEventListener('keydown',rkd); document.removeEventListener('keyup',rku);
+  if(RE._tiltHandler) window.removeEventListener('devicemotion',RE._tiltHandler);
+  if(dest==='shop') switchToGrocery();
+  else { hideAll(); showScreen('phome'); document.querySelectorAll('.p-nav-item').forEach(n=>n.classList.remove('active')); document.getElementById('pn-home').classList.add('active'); syncCoins(); }
+}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function toast(msg,type='g') {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`show ${type}`;
+  clearTimeout(t._t); t._t=setTimeout(()=>t.className='',3000);
+}
+function launchConfetti() {
+  const c=document.getElementById('confetti');c.innerHTML='';
+  const cols=['#f0c040','#ff4560','#38bdf8','#22d67a','#ff8c00','#fff','#c084fc'];
+  for(let i=0;i<100;i++){const p=document.createElement('div');p.className='cp';p.style.cssText=`left:${Math.random()*100}%;width:${4+Math.random()*9}px;height:${4+Math.random()*9}px;background:${cols[i%cols.length]};border-radius:${Math.random()>.5?'50%':'3px'};animation:cpF ${2+Math.random()*3}s ${Math.random()*1.5}s linear forwards;`;c.appendChild(p);}
+  setTimeout(()=>c.innerHTML='',7000);
+}
+
+// ══════════════════════════════════════════
+// ADMIN PANEL
+// ══════════════════════════════════════════
+let adminLoggedIn = false;
+let adminTabIdx = 0;
+
+function openAdmin() {
+  hideAll(); showScreen('admin');
+  document.querySelectorAll('.g-nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('gn-admin').classList.add('active');
+  if(adminLoggedIn) { document.getElementById('adminLogin').style.display='none'; document.getElementById('adminDash').style.display='flex'; renderAdminTab(adminTabIdx); }
+  else { document.getElementById('adminLogin').style.display='flex'; document.getElementById('adminDash').style.display='none'; }
+}
+
+function adminLogin() {
+  const u=document.getElementById('adminUser').value;
+  const p=document.getElementById('adminPass').value;
+  if(u==='admin'&&p==='1234') {
+    adminLoggedIn=true;
+    document.getElementById('adminLogin').style.display='none';
+    document.getElementById('adminDash').style.display='flex';
+    renderAdminTab(0);
+    toast('✅ Admin Login Successful!','i');
+  } else { toast('❌ Wrong credentials!','e'); }
+}
+function adminLogout() { adminLoggedIn=false; openAdmin(); toast('Logged out','i'); }
+
+function adminTab(i) {
+  adminTabIdx=i;
+  document.querySelectorAll('.admin-tab').forEach((t,idx)=>t.classList.toggle('active',idx===i));
+  for(let j=0;j<5;j++){const el=document.getElementById('adminTab'+j);if(el)el.style.display=j===i?'block':'none';}
+  renderAdminTab(i);
+}
+
+function renderAdminTab(i) {
+  if(i===0) renderDashboard();
+  else if(i===1) renderAdminProducts();
+  else if(i===2) renderAdminOrders();
+  else if(i===4) renderAdminUsers();
+}
+
+function renderDashboard() {
+  // Revenue chart
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const vals=[3200,4100,2800,5200,6800,8400,4150];
+  const max=Math.max(...vals);
+  const chart=document.getElementById('revenueChart'); if(!chart) return;
+  chart.innerHTML=days.map((d,i)=>`<div class="chart-row"><div class="chart-label">${d}</div><div class="chart-bar-bg"><div class="chart-bar-fill" style="width:${vals[i]/max*100}%;background:linear-gradient(90deg,#e11d48,#ff6b95)">₹${(vals[i]/1000).toFixed(1)}k</div></div><div class="chart-val">₹${vals[i]}</div></div>`).join('');
+  // Category chart
+  const cats2=[['🥬 Veggies',45],['🍗 Chicken',28],['🍎 Fruits',18],['🐟 Fish',9]];
+  const cc=document.getElementById('catChart'); if(cc) cc.innerHTML=cats2.map(([n,p])=>`<div class="chart-row"><div style="font-size:.68rem;color:rgba(238,242,255,.5);width:75px;white-space:nowrap">${n}</div><div class="chart-bar-bg"><div class="chart-bar-fill" style="width:${p}%;background:linear-gradient(90deg,#38bdf8,#0ea5e9)">${p}%</div></div></div>`).join('');
+  // Live activity
+  const la=document.getElementById('liveActivity'); if(la) la.innerHTML=['🟢 Rahul K. placed order #1052 — ₹340','🟡 Anita S. redeemed 2000 coins — ₹20 off','🟢 Storm_22 joined via referral CYCLE7749','🟢 Suresh M. placed order #1051 — ₹180','🔴 Order #1047 cancelled by Priya T.'].map(l=>`<div>• ${l}</div>`).join('');
+}
+
+function renderAdminProducts() {
+  const list=document.getElementById('adminProdList'); if(!list) return;
+  const cnt=document.getElementById('prodCount'); if(cnt) cnt.textContent=PRODS.length;
+  list.innerHTML=PRODS.slice(0,12).map(p=>{
+    // Show image or emoji
+    const imgHtml = p.img
+      ? `<img src="${p.img}" style="width:42px;height:42px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,.1)">`
+      : `<div style="font-size:1.8rem;width:42px;text-align:center">${p.e}</div>`;
+    return `<div class="admin-prod-row">
+      <div style="width:42px;height:42px;display:flex;align-items:center;justify-content:center">${imgHtml}</div>
+      <div class="apr-info"><div class="apr-name">${p.n}</div><div class="apr-price">₹${p.p} • ${p.u} • ${p.c}</div></div>
+      <div class="apr-actions">
+        <button class="apr-btn apr-edit" onclick="adminEditImg('${p.id}')">🖼️</button>
+        <button class="apr-btn apr-del" onclick="adminDelProd('${p.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('')+'<div style="font-size:.72rem;color:rgba(255,255,255,.3);text-align:center;padding:8px">...and '+(PRODS.length > 12 ? PRODS.length-12 : 0)+' more products</div>';
+}
+
+// Stored image for new product
+let _newProdImg = null;
+
+function handleProdImg(input) {
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 2*1024*1024){ toast('❌ Image 2MB se chota hona chahiye!','e'); return; }
+  const reader = new FileReader();
+  reader.onload = e=>{
+    _newProdImg = e.target.result;
+    const preview = document.getElementById('imgPreviewInner');
+    if(preview){
+      preview.innerHTML = `<img src="${_newProdImg}" style="width:76px;height:76px;object-fit:cover;border-radius:10px">`;
+    }
+    const emojiInput = document.getElementById('newProdEmoji');
+    if(emojiInput) emojiInput.value=''; // clear emoji if image chosen
+    toast('✅ Image uploaded!','g');
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateImgPreview(val) {
+  if(!val) return;
+  _newProdImg = null; // clear image if emoji typed
+  const preview = document.getElementById('imgPreviewInner');
+  if(preview) preview.innerHTML = `<span style="font-size:2.8rem">${val}</span>`;
+}
+
+// Edit image for existing product
+function adminEditImg(id) {
+  const input = document.createElement('input');
+  input.type='file'; input.accept='image/*';
+  input.onchange = e=>{
+    const file = e.target.files[0]; if(!file) return;
+    if(file.size > 2*1024*1024){ toast('❌ 2MB se chota hona chahiye!','e'); return; }
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      const prod = PRODS.find(p=>p.id===id);
+      if(prod){
+        prod.img = ev.target.result;
+        prod.e = '🖼️';
+        renderProducts(); renderProducts2(); renderAdminProducts();
+        toast('✅ Product image update ho gaya!','g');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+function adminAddProduct() {
+  const name=document.getElementById('newProdName').value.trim();
+  const emoji=document.getElementById('newProdEmoji').value.trim()||'📦';
+  const price=parseInt(document.getElementById('newProdPrice').value)||0;
+  const unit=document.getElementById('newProdUnit').value.trim()||'1 pc';
+  const cat=document.getElementById('newProdCat').value;
+  if(!name||!price){toast('❌ Name and Price required!','e');return;}
+  const newP={id:'adm'+Date.now(),n:name,e:_newProdImg?'🖼️':emoji,u:unit,p:price,c:cat,fresh:true,img:_newProdImg||null};
+  PRODS.unshift(newP);
+  renderProducts(); renderProducts2(); renderAdminProducts();
+  // Save to Supabase
+  dbSaveProduct(newP);
+  // Reset form
+  document.getElementById('newProdName').value='';
+  document.getElementById('newProdPrice').value='';
+  document.getElementById('newProdUnit').value='';
+  document.getElementById('newProdEmoji').value='';
+  _newProdImg=null;
+  const preview=document.getElementById('imgPreviewInner');
+  if(preview) preview.innerHTML='<span style="font-size:2.8rem">📦</span>';
+  toast(`✅ "${name}" store mein add ho gaya!`,'g');
+}
+
+function adminDelProd(id) {
+  const idx=PRODS.findIndex(p=>p.id===id);
+  if(idx>-1){
+    const n=PRODS[idx].n;
+    PRODS.splice(idx,1);
+    renderProducts(); renderProducts2(); renderAdminProducts();
+    dbDeleteProduct(id);
+    toast(`🗑️ "${n}" deleted`,'i');
+  }
+}
+
+const MOCK_ORDERS=[
+  {id:'#1052',user:'Rahul K.',items:'Tomatoes, Milk, Atta',amount:340,status:'delivered'},
+  {id:'#1051',user:'Anita S.',items:'Chicken, Onions',amount:255,status:'pending'},
+  {id:'#1050',user:'Suresh M.',items:'Basmati Rice, Oil',amount:515,status:'delivered'},
+  {id:'#1049',user:'Priya T.',items:'Fruits Basket',amount:310,status:'cancelled'},
+  {id:'#1048',user:'Vikram R.',items:'Fish, Spinach',amount:185,status:'delivered'},
+  {id:'#1047',user:'Meena G.',items:'Paneer, Curd, Butter',amount:188,status:'pending'},
+];
+function renderAdminOrders() {
+  const list=document.getElementById('adminOrderList'); if(!list) return;
+  list.innerHTML=MOCK_ORDERS.map(o=>`<div class="admin-order-row"><div><div class="aor-id">${o.id}</div><div style="font-size:.65rem;color:rgba(255,255,255,.3)">${o.user}</div></div><div class="aor-info"><div class="aor-user">${o.items}</div><div class="aor-amount">₹${o.amount}</div></div><div><div class="status-pill sp-${o.status}">${o.status==='delivered'?'✓ Delivered':o.status==='pending'?'⏳ Pending':'✗ Cancel'}</div></div></div>`).join('');
+}
+
+const MOCK_USERS=[
+  {name:'Rahul Kumar',type:'user',coins:1200,orders:12},{name:'Anita Sharma',type:'user',coins:850,orders:8},
+  {name:'Suresh Modi',type:'user',coins:2400,orders:18},{name:'Priya Tiwari',type:'user',coins:300,orders:4},
+];
+const MOCK_DK=[
+  {name:'Ram Grocery Store',code:'DKAAN-1121',refs:23,earned:11500},{name:'Shyam Vegetables',code:'DKAAN-4432',refs:7,earned:3500},
+];
+function renderAdminUsers() {
+  const ul=document.getElementById('adminUserList'); if(ul) ul.innerHTML=MOCK_USERS.map(u=>`<div class="admin-prod-row"><div class="apr-emoji">👤</div><div class="apr-info"><div class="apr-name">${u.name}</div><div class="apr-price">🪙${u.coins} coins • ${u.orders} orders</div></div><div><span class="status-pill sp-delivered">Active</span></div></div>`).join('');
+  const dl=document.getElementById('adminDkList'); if(dl) dl.innerHTML=MOCK_DK.map(d=>`<div class="admin-prod-row"><div class="apr-emoji">🏪</div><div class="apr-info"><div class="apr-name">${d.name}</div><div class="apr-price">Code: ${d.code} • ${d.refs} refs • 🪙${d.earned.toLocaleString('en-IN')}</div></div><div><span class="status-pill" style="background:rgba(192,64,240,.12);color:#c040f0">Dukandaar</span></div></div>`).join('');
+}
+
+function saveAdminCoins() { toast('💾 Coin settings saved!','coin'); launchConfetti(); }
+
+// ══════════════════════════════════════════
+// DUKANDAAR REFERRAL
+// ══════════════════════════════════════════
+let dkRefCount=7, dkEarned=3500;
+
+const DK_REFERRED=[
+  {emoji:'👤',name:'Ramesh K.',orders:'5 orders, ₹1,240',earned:'🪙 500'},
+  {emoji:'👤',name:'Sunita P.',orders:'2 orders, ₹560',earned:'🪙 500'},
+  {emoji:'👤',name:'Arvind S.',orders:'8 orders, ₹2,100',earned:'🪙 500'},
+  {emoji:'👤',name:'Geeta M.',orders:'1 order, ₹299',earned:'🪙 500'},
+  {emoji:'👤',name:'Lalit R.',orders:'3 orders, ₹740',earned:'🪙 500'},
+  {emoji:'👤',name:'Kavya D.',orders:'4 orders, ₹980',earned:'🪙 500'},
+  {emoji:'👤',name:'Mohit N.',orders:'Just joined',earned:'🪙 500'},
+];
+
+function renderDkScreen() {
+  const list=document.getElementById('dkRefList'); if(!list) return;
+  list.innerHTML=DK_REFERRED.map(r=>`<div class="dk-ref-row"><div class="dk-ref-avatar">${r.emoji}</div><div class="dk-ref-info"><div class="dk-ref-name">${r.name}</div><div class="dk-ref-orders">${r.orders}</div></div><div class="dk-ref-earn">${r.earned}</div></div>`).join('');
+  const dc=document.getElementById('dkRefCount'); if(dc) dc.textContent=dkRefCount;
+  const de=document.getElementById('dkEarned'); if(de) de.textContent=dkEarned.toLocaleString('en-IN');
+  const dd=document.getElementById('dkCoinDisp'); if(dd) dd.textContent=coins.toLocaleString('en-IN');
+}
+
+function simulateDkRef() {
+  coins+=500; dkRefCount++; dkEarned+=500;
+  DK_REFERRED.unshift({emoji:'👤',name:'New Customer '+dkRefCount,orders:'Just joined',earned:'🪙 500'});
+  renderDkScreen(); syncCoins();
+  addPActivity('Dukandaar Referral — New customer joined','🏪','+🪙500','plus');
+  const pBar=document.getElementById('dkProgressBar');
+  const pLbl=document.getElementById('dkProgressLbl');
+  const progress=Math.min(100,(dkRefCount/11)*100);
+  if(pBar) pBar.style.width=progress+'%';
+  if(pLbl) pLbl.textContent=`${dkRefCount} / 11 refs`;
+  if(dkRefCount>=11){ const t=document.querySelector('.dk-tier:nth-child(2)'); if(t) t.classList.add('active-tier'); toast('🎉 Silver Tier unlock! Ab 🪙700 per referral!','coin'); launchConfetti(); } else { toast('🏪 Dukandaar Referral! +🪙500 coins!','coin'); launchConfetti(); }
+}
+
+function copyDk() { toast('📋 Dukandaar code copied: DKAAN-7749 — Share karo customers ko!','i'); }
+
+// ══════════════════════════════════════════
+// TAP BATTLE ROYALE ENGINE
+// ══════════════════════════════════════════
+const TB = {
+  score:0, hits:0, misses:0, combo:1, maxCombo:1,
+  timeLeft:60, rank:50, running:false,
+  targets:[], particles:[], popups:[],
+  botScores:[], animId:null, timerInt:null, lobInt:null,
+  canvas:null, ctx:null, W:0, H:0,
+};
+
+const TB_BOTS = ['Shadow⚡','Blaze🔥','Nova💫','Viper🐍','Ghost👻','Titan💪',
+  'Storm⛈️','Reaper💀','Cobra🐍','Ace♠️','Flash⚡','King👑','Wolf🐺','Fox🦊',
+  'Eagle🦅','Bear🐻','Lion🦁','Hawk🦅','Shark🦈','Tiger🐯'];
+
+const TARGET_TYPES = [
+  {type:'normal', color:'#ff4560', glow:'rgba(255,69,96,0.4)', pts:10, size:38, life:1.8},
+  {type:'fast',   color:'#f0c040', glow:'rgba(240,192,64,0.4)', pts:20, size:30, life:1.1},
+  {type:'big',    color:'#22d67a', glow:'rgba(34,214,122,0.4)', pts:5,  size:55, life:2.5},
+  {type:'tiny',   color:'#c084fc', glow:'rgba(192,132,252,0.4)', pts:50, size:20, life:1.4},
+  {type:'moving', color:'#38bdf8', glow:'rgba(56,189,248,0.4)', pts:30, size:34, life:2.0},
+];
+
+function startTapBattle() {
+  hideAll(); showScreen('tapbattle');
+  document.getElementById('tb-lobby').style.display='flex';
+  document.getElementById('tb-countdown').style.display='none';
+  document.getElementById('tb-arena').style.display='none';
+  document.getElementById('tb-result').style.display='none';
+  document.querySelectorAll('.p-nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('pn-race').classList.add('active');
+
+  // Init bot scores
+  TB.botScores = TB_BOTS.map((name,i)=>({name, score:0, rank:i+2}));
+
+  let players=1, t=30;
+  document.getElementById('tb-playercount').textContent=players;
+  document.getElementById('tb-lobbytimer').textContent=t;
+
+  clearInterval(TB.lobInt);
+  TB.lobInt = setInterval(()=>{
+    // Fill players
+    if(players<100){
+      players += Math.floor(Math.random()*8)+2;
+      if(players>100) players=100;
+      document.getElementById('tb-playercount').textContent=players;
+      document.getElementById('tb-lobbar').style.width=(players)+'%';
+    }
+    // Timer
+    t--;
+    document.getElementById('tb-lobbytimer').textContent=Math.max(0,t);
+    if(t<=0||players>=100){
+      clearInterval(TB.lobInt);
+      document.getElementById('tb-playercount').textContent='100';
+      document.getElementById('tb-lobbar').style.width='100%';
+      tbStartCountdown();
+    }
+  },800);
+}
+
+function tbStartCountdown() {
+  document.getElementById('tb-lobby').style.display='none';
+  document.getElementById('tb-countdown').style.display='flex';
+  let n=3;
+  const el = document.getElementById('tb-cdnum');
+  function tick(){
+    el.textContent = n>0 ? n : '🎯 GO!';
+    el.style.transform='scale(1.5)';
+    setTimeout(()=>el.style.transform='scale(1)',200);
+    if(n===0){ setTimeout(tbStartGame,700); }
+    else{ n--; setTimeout(tick,900); }
+  }
+  tick();
+}
+
+function tbStartGame() {
+  document.getElementById('tb-countdown').style.display='none';
+  const arena = document.getElementById('tb-arena');
+  arena.style.display='flex';
+
+  // Setup canvas
+  const canvas = document.getElementById('tb-canvas');
+  TB.canvas=canvas; TB.ctx=canvas.getContext('2d');
+  setTimeout(()=>{
+    TB.W=canvas.offsetWidth; TB.H=canvas.offsetHeight;
+    canvas.width=TB.W; canvas.height=TB.H;
+
+    // Reset state
+    TB.score=0; TB.hits=0; TB.misses=0; TB.combo=1; TB.maxCombo=1;
+    TB.timeLeft=60; TB.rank=50; TB.running=true;
+    TB.targets=[]; TB.particles=[]; TB.popups=[];
+    TB.botScores.forEach(b=>b.score=0);
+
+    // Canvas touch/click
+    canvas.ontouchstart = e=>{
+      e.preventDefault();
+      const rect=canvas.getBoundingClientRect();
+      Array.from(e.changedTouches).forEach(t2=>{
+        tbHandleTap(t2.clientX-rect.left, t2.clientY-rect.top);
+      });
+    };
+    canvas.onmousedown = e=>{
+      const rect=canvas.getBoundingClientRect();
+      tbHandleTap(e.clientX-rect.left, e.clientY-rect.top);
+    };
+
+    // Spawn first targets
+    for(let i=0;i<3;i++) setTimeout(()=>tbSpawnTarget(), i*200);
+
+    // Game timer
+    TB.timerInt = setInterval(()=>{
+      TB.timeLeft--;
+      const el=document.getElementById('tb-timer');
+      if(el) el.textContent=TB.timeLeft;
+      const bar=document.getElementById('tb-timerbar');
+      if(bar) bar.style.width=(TB.timeLeft/60*100)+'%';
+
+      // Bots score
+      TB.botScores.forEach(b=>{
+        b.score += Math.floor(Math.random()*25)+5;
+      });
+      tbUpdateRank();
+
+      if(TB.timeLeft<=0){ clearInterval(TB.timerInt); TB.running=false; tbShowResult(); }
+
+      // Speed up spawning as time goes on
+      const elapsed=60-TB.timeLeft;
+      if(elapsed>0 && elapsed%8===0) tbSpawnTarget();
+    },1000);
+
+    // Spawn targets regularly
+    let spawnDelay=900;
+    function spawnLoop(){
+      if(!TB.running) return;
+      tbSpawnTarget();
+      spawnDelay = Math.max(400, 900-(60-TB.timeLeft)*7);
+      setTimeout(spawnLoop, spawnDelay);
+    }
+    setTimeout(spawnLoop, 400);
+
+    // Game loop
+    let last=0;
+    function loop(ts){
+      const dt=Math.min((ts-(last||ts))/1000,0.05); last=ts;
+      if(TB.running||TB.targets.length>0||TB.particles.length>0){
+        tbUpdate(dt); tbDraw();
+        TB.animId=requestAnimationFrame(loop);
+      }
+    }
+    TB.animId=requestAnimationFrame(loop);
+  },80);
+}
+
+function tbSpawnTarget(){
+  if(!TB.running) return;
+  const type = TARGET_TYPES[Math.random()<0.5?0 : Math.floor(Math.random()*TARGET_TYPES.length)];
+  const pad=type.size+10;
+  const target={
+    ...type,
+    x: pad + Math.random()*(TB.W-pad*2),
+    y: pad + Math.random()*(TB.H-pad*2),
+    born: Date.now(),
+    progress:0, // 0=appearing, 1=full, shrinking
+    vx: type.type==='moving'?(Math.random()-.5)*120:0,
+    vy: type.type==='moving'?(Math.random()-.5)*80:0,
+    pulse:0, hit:false,
+  };
+  TB.targets.push(target);
+}
+
+function tbHandleTap(x,y){
+  if(!TB.running) return;
+  let hit=false;
+  for(let i=TB.targets.length-1;i>=0;i--){
+    const t=TB.targets[i];
+    const dist=Math.hypot(x-t.x, y-t.y);
+    if(dist<=t.size){
+      // Hit!
+      const age=(Date.now()-t.born)/1000;
+      const timeBonus=Math.max(1, Math.round((t.life-age)/t.life*2));
+      const pts=t.pts*TB.combo*timeBonus;
+      TB.score+=pts; TB.hits++;
+      TB.combo=Math.min(TB.combo+1,8);
+      if(TB.combo>TB.maxCombo) TB.maxCombo=TB.combo;
+      TB.targets.splice(i,1);
+      tbSpawnParticles(t.x,t.y,t.color,12);
+      tbSpawnPopup(t.x,t.y,'+'+pts,t.color);
+      if(TB.combo>=3) tbShowComboPop();
+      const sc=document.getElementById('tb-score');
+      if(sc) sc.textContent=TB.score;
+      const cb=document.getElementById('tb-combo');
+      if(cb) cb.textContent='x'+TB.combo;
+      hit=true; break;
+    }
+  }
+  if(!hit){
+    TB.combo=1;
+    const cb=document.getElementById('tb-combo');
+    if(cb) cb.textContent='x1';
+    // Miss flash
+    tbSpawnPopup(x,y,'MISS','rgba(255,69,96,0.8)');
+  }
+}
+
+function tbShowComboPop(){
+  const el=document.getElementById('tb-combopop');
+  if(!el) return;
+  el.textContent = TB.combo>=8?'🔥 MAX COMBO x8!':
+    TB.combo>=6?`🔥 COMBO x${TB.combo}!`:`⚡ x${TB.combo} COMBO`;
+  el.style.opacity='1';
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.style.opacity='0',800);
+}
+
+function tbSpawnParticles(x,y,col,n){
+  for(let i=0;i<n;i++){
+    const angle=Math.random()*Math.PI*2;
+    const spd=80+Math.random()*160;
+    TB.particles.push({x,y,vx:Math.cos(angle)*spd,vy:Math.sin(angle)*spd,
+      life:1,color:col,size:3+Math.random()*4});
+  }
+}
+
+function tbSpawnPopup(x,y,txt,col){
+  TB.popups.push({x,y,txt,col,life:1,vy:-60});
+}
+
+function tbUpdate(dt){
+  const now=Date.now();
+  // Update targets
+  TB.targets=TB.targets.filter(t=>{
+    const age=(now-t.born)/1000;
+    t.progress=age/t.life;
+    t.pulse+=dt*5;
+    if(t.type==='moving'){
+      t.x+=t.vx*dt; t.y+=t.vy*dt;
+      if(t.x<t.size||t.x>TB.W-t.size) t.vx*=-1;
+      if(t.y<t.size||t.y>TB.H-t.size) t.vy*=-1;
+    }
+    if(age>=t.life){
+      // Expired — miss penalty
+      TB.combo=1;
+      const cb=document.getElementById('tb-combo');
+      if(cb) cb.textContent='x1';
+      return false;
+    }
+    return true;
+  });
+  // Update particles
+  TB.particles=TB.particles.filter(p=>{
+    p.x+=p.vx*dt; p.y+=p.vy*dt;
+    p.vy+=200*dt; // gravity
+    p.life-=dt*2.5;
+    return p.life>0;
+  });
+  // Update popups
+  TB.popups=TB.popups.filter(p=>{
+    p.y+=p.vy*dt; p.vy*=0.92; p.life-=dt*2;
+    return p.life>0;
+  });
+}
+
+function tbDraw(){
+  const c=TB.ctx, W=TB.W, H=TB.H;
+  if(!c) return;
+
+  // Background
+  c.fillStyle='#07090e'; c.fillRect(0,0,W,H);
+
+  // Grid lines (subtle)
+  c.strokeStyle='rgba(255,255,255,0.03)'; c.lineWidth=1;
+  for(let x=0;x<W;x+=40){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,H); c.stroke(); }
+  for(let y=0;y<H;y+=40){ c.beginPath(); c.moveTo(0,y); c.lineTo(W,y); c.stroke(); }
+
+  // Draw targets
+  TB.targets.forEach(t=>{
+    const timeLeft=1-t.progress;
+    const alpha=Math.min(1,timeLeft*4); // fade out in last 25%
+    const appear=Math.min(1,t.progress*5); // appear in first 20%
+    const sc=appear * (0.7+Math.sin(t.pulse)*0.08);
+    const r=t.size*sc;
+
+    // Outer glow ring
+    const glow=c.createRadialGradient(t.x,t.y,r*0.3,t.x,t.y,r*1.8);
+    glow.addColorStop(0,t.glow); glow.addColorStop(1,'transparent');
+    c.globalAlpha=alpha*0.6;
+    c.fillStyle=glow; c.beginPath(); c.arc(t.x,t.y,r*1.8,0,Math.PI*2); c.fill();
+
+    // Timer ring (shows remaining time)
+    c.globalAlpha=alpha*0.8;
+    c.strokeStyle=t.color; c.lineWidth=3;
+    c.beginPath();
+    c.arc(t.x,t.y,r+4,-Math.PI/2,-Math.PI/2+timeLeft*Math.PI*2);
+    c.stroke();
+
+    // Main circle
+    c.globalAlpha=alpha;
+    const grad=c.createRadialGradient(t.x-r*0.3,t.y-r*0.3,r*0.1,t.x,t.y,r);
+    grad.addColorStop(0,'rgba(255,255,255,0.9)');
+    grad.addColorStop(0.3,t.color);
+    grad.addColorStop(1,t.color+'88');
+    c.fillStyle=grad; c.beginPath(); c.arc(t.x,t.y,r,0,Math.PI*2); c.fill();
+
+    // Inner cross/target symbol
+    c.strokeStyle='rgba(255,255,255,0.7)'; c.lineWidth=1.5;
+    c.beginPath(); c.moveTo(t.x-r*0.5,t.y); c.lineTo(t.x+r*0.5,t.y); c.stroke();
+    c.beginPath(); c.moveTo(t.x,t.y-r*0.5); c.lineTo(t.x,t.y+r*0.5); c.stroke();
+    c.beginPath(); c.arc(t.x,t.y,r*0.3,0,Math.PI*2); c.stroke();
+
+    // Points label
+    c.fillStyle='rgba(255,255,255,0.9)';
+    c.font=`bold ${Math.round(r*0.5)}px sans-serif`;
+    c.textAlign='center'; c.textBaseline='middle';
+    c.fillText('+'+t.pts, t.x, t.y+r*1.5);
+    c.textBaseline='alphabetic';
+
+    c.globalAlpha=1;
+  });
+
+  // Draw particles
+  TB.particles.forEach(p=>{
+    c.globalAlpha=p.life*0.8;
+    c.fillStyle=p.color;
+    c.beginPath(); c.arc(p.x,p.y,p.size*p.life,0,Math.PI*2); c.fill();
+  });
+
+  // Draw popups
+  TB.popups.forEach(p=>{
+    c.globalAlpha=p.life;
+    c.font=`bold ${p.txt.startsWith('+')?'20':'16'}px sans-serif`;
+    c.fillStyle=p.col; c.textAlign='center';
+    c.fillText(p.txt,p.x,p.y);
+  });
+  c.globalAlpha=1; c.textAlign='left';
+}
+
+function tbUpdateRank(){
+  const allScores=[...TB.botScores.map(b=>b.score),TB.score].sort((a,b)=>b-a);
+  TB.rank=allScores.indexOf(TB.score)+1;
+  const el=document.getElementById('tb-rank'); if(el) el.textContent=TB.rank;
+  // Live leaderboard
+  const lb=document.getElementById('tb-liveLb'); if(!lb) return;
+  const top5=[...TB.botScores,{name:'YOU⭐',score:TB.score}]
+    .sort((a,b)=>b.score-a.score).slice(0,5);
+  lb.innerHTML='<div style="font-size:.58rem;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:6px">TOP 5</div>'+
+    top5.map((p,i)=>{
+      const isMe=p.name==='YOU⭐';
+      return `<div style="display:flex;justify-content:space-between;font-size:.72rem;padding:3px 0;color:${isMe?'#f0c040':'rgba(255,255,255,.6)'};font-weight:${isMe?'800':'400'}">
+        <span>${['🥇','🥈','🥉','4️⃣','5️⃣'][i]} ${p.name.substring(0,7)}</span>
+        <span>${p.score}</span>
+      </div>`;
+    }).join('');
+}
+
+function tbShowResult(){
+  cancelAnimationFrame(TB.animId);
+  document.getElementById('tb-arena').style.display='none';
+  document.getElementById('tb-result').style.display='flex';
+
+  // Final rank
+  const finalRanking=[...TB.botScores,{name:'YOU',score:TB.score}]
+    .sort((a,b)=>b.score-a.score);
+  const rank=finalRanking.findIndex(p=>p.name==='YOU')+1;
+
+  let emoji,title,sub,earned;
+  if(rank===1){emoji='🏆';title='CHAMPION!';sub='100 players mein #1!';earned=500;}
+  else if(rank===2){emoji='🥈';title='2ND PLACE!';sub='Almost champion!';earned=300;}
+  else if(rank===3){emoji='🥉';title='3RD PLACE!';sub='Podium finish!';earned=150;}
+  else if(rank<=10){emoji='⚡';title=`RANK #${rank}`;sub='Top 10 — great!';earned=50;}
+  else{emoji='🎯';title=`RANK #${rank}`;sub='Practice more!';earned=10;}
+
+  coins+=earned; syncCoins();
+  document.getElementById('tb-res-emoji').textContent=emoji;
+  document.getElementById('tb-res-title').textContent=title;
+  document.getElementById('tb-res-title').style.color=rank<=3?'#f0c040':'#eef2ff';
+  document.getElementById('tb-res-sub').textContent=sub;
+  document.getElementById('tb-res-coins').textContent=`🪙 ${earned}`;
+  document.getElementById('tb-res-score').textContent=TB.score;
+  document.getElementById('tb-res-hits').textContent=TB.hits;
+  document.getElementById('tb-res-maxcombo').textContent='x'+TB.maxCombo;
+
+  // Top 10 leaderboard
+  const lb=document.getElementById('tb-finalLb');
+  lb.innerHTML=finalRanking.slice(0,10).map((p,i)=>{
+    const isMe=p.name==='YOU';
+    const medals=['🥇','🥈','🥉'];
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);color:${isMe?'#f0c040':'rgba(255,255,255,.7)'};font-weight:${isMe?'800':'400'};font-size:.8rem">
+      <span>${i<3?medals[i]:`#${i+1}`} ${isMe?'⭐ YOU':p.name}</span>
+      <span style="font-family:var(--head)">${p.score}</span>
+    </div>`;
+  }).join('');
+
+  addPActivity(`Tap Battle — ${title}`,'🎯',`+🪙${earned}`,'plus');
+  if(rank<=3) launchConfetti();
+}
+
+function tbPlayAgain(){
+  cancelAnimationFrame(TB.animId);
+  clearInterval(TB.timerInt);
+  clearInterval(TB.lobInt);
+  TB.running=false;
+  startTapBattle();
+}
+
+function afterTapBattle(){
+  cancelAnimationFrame(TB.animId);
+  clearInterval(TB.timerInt);
+  clearInterval(TB.lobInt);
+  TB.running=false;
+  switchToGrocery();
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+// First hide all, then show grocery home
+document.querySelectorAll('.screen').forEach(s=>{ s.style.display='none'; s.classList.remove('active'); });
+const initScreen = document.getElementById('screen-ghome');
+if(initScreen){ initScreen.style.display='flex'; initScreen.classList.add('active'); }
+document.getElementById('gNav').style.display='flex';
+document.getElementById('pNav').style.display='none';
+
+renderCats('catRow','gSearch'); renderProducts();
+renderCats('catRow2','gSearch2'); renderProducts2();
+syncCoins();
+
+// Load products from Supabase
+dbLoadProducts();
+
+</script>
+</body>
+</html>
