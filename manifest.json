@@ -1,0 +1,44 @@
+{
+  "name": "Green Shop — Grocery Store",
+  "short_name": "Green Shop",
+  "description": "Green Shop Grocery Store — Shop, Play & Earn Coins! Giridih, Jharkhand",
+  "start_url": "https://akhtarsee.github.io/Green-Shop-/",
+  "display": "standalone",
+  "background_color": "#f0fdf4",
+  "theme_color": "#16a34a",
+  "orientation": "portrait",
+  "scope": "https://akhtarsee.github.io/Green-Shop-/",
+  "lang": "hi",
+  "icons": [
+    {
+      "src": "https://akhtarsee.github.io/Green-Shop-/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://akhtarsee.github.io/Green-Shop-/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "food", "games"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Shop Now",
+      "short_name": "Shop",
+      "description": "Grocery shopping",
+      "url": "https://akhtarsee.github.io/Green-Shop-/?tab=shop",
+      "icons": [{ "src": "https://akhtarsee.github.io/Green-Shop-/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Play Game",
+      "short_name": "Game",
+      "description": "Earn coins by playing",
+      "url": "https://akhtarsee.github.io/Green-Shop-/?tab=game",
+      "icons": [{ "src": "https://akhtarsee.github.io/Green-Shop-/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
