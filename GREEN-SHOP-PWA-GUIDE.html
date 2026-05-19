@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Green Shop PWA — Install Guide</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0fdf4;
+      color: #1f2937;
+    }
+    header {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    header h1 { font-size: 26px; margin-bottom: 6px; }
+    header p { opacity: 0.9; font-size: 14px; }
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .content { padding: 20px; max-width: 480px; margin: 0 auto; }
+
+    .step-card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .step-num {
+      background: #16a34a;
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .step-content h3 { font-size: 16px; color: #16a34a; margin-bottom: 4px; }
+    .step-content p { font-size: 14px; color: #6b7280; line-height: 1.5; }
+    .step-content code {
+      background: #f3f4f6;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #374151;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #16a34a;
+      margin: 24px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .code-block {
+      background: #1e293b;
+      color: #a3e635;
+      border-radius: 12px;
+      padding: 16px;
+      font-family: monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      overflow-x: auto;
+      margin-bottom: 16px;
+    }
+    .code-block .comment { color: #64748b; }
+    .code-block .tag { color: #38bdf8; }
+    .code-block .attr { color: #fb923c; }
+    .code-block .val { color: #a3e635; }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .feature-card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .feature-card .icon { font-size: 28px; margin-bottom: 8px; }
+    .feature-card h4 { font-size: 13px; color: #374151; }
+    .feature-card p { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+
+    .alert {
+      background: #fef9c3;
+      border-left: 4px solid #eab308;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: #854d0e;
+    }
+    .alert-green {
+      background: #f0fdf4;
+      border-left: 4px solid #16a34a;
+      color: #166534;
+    }
+
+    .btn {
+      display: block;
+      background: #16a34a;
+      color: white;
+      text-decoration: none;
+      padding: 16px;
+      border-radius: 14px;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    footer {
+      text-align: center;
+      padding: 30px 20px;
+      color: #9ca3af;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div style="font-size:48px; margin-bottom:12px">🛒</div>
+  <h1>Green Shop PWA</h1>
+  <p>Giridih, Jharkhand • Shop & Play & Earn</p>
+  <span class="badge">✅ PWA Ready Guide</span>
+</header>
+
+<div class="content">
+
+  <!-- Features -->
+  <div class="section-title">⚡ PWA ke Fayde</div>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="icon">📱</div>
+      <h4>App Jaisa Feel</h4>
+      <p>Phone mein install hoga</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🔔</div>
+      <h4>Notifications</h4>
+      <p>Offers ki alert milegi</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">⚡</div>
+      <h4>Fast Loading</h4>
+      <p>Cache se instant open</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📶</div>
+      <h4>Offline Mode</h4>
+      <p>Bina internet bhi chalega</p>
+    </div>
+  </div>
+
+  <!-- Step 1: GitHub files upload -->
+  <div class="section-title">📁 Step 1 — Files GitHub par Upload Karo</div>
+
+  <div class="alert">
+    ⚠️ Yeh 3 files aapko apne GitHub repository mein upload karni hain:<br>
+    <strong>manifest.json</strong>, <strong>sw.js</strong>, <strong>offline.html</strong>
+  </div>
+
+  <div class="step-card">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h3>GitHub par Jao</h3>
+      <p>github.com par apna account open karo aur <code>Green-Shop-</code> repository mein jao</p>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h3>Files Upload Karo</h3>
+      <p>"Add file" → "Upload files" click karo aur teeno files drag karke upload karo</p>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h3>Commit Karo</h3>
+      <p>"Commit changes" button click karo — files live ho jayengi</p>
+    </div>
+  </div>
+
+  <!-- Step 2: HTML mein code add karo -->
+  <div class="section-title">✏️ Step 2 — index.html mein Code Add Karo</div>
+
+  <p style="font-size:14px; color:#6b7280; margin-bottom:12px">
+    Apni <code>index.html</code> file open karo aur <code>&lt;head&gt;</code> section mein yeh code paste karo:
+  </p>
+
+  <div class="code-block">
+<span class="comment">&lt;!-- PWA Manifest --&gt;</span>
+<span class="tag">&lt;link</span> <span class="attr">rel=</span><span class="val">"manifest"</span> <span class="attr">href=</span><span class="val">"manifest.json"</span><span class="tag">&gt;</span>
+<span class="tag">&lt;meta</span> <span class="attr">name=</span><span class="val">"theme-color"</span> <span class="attr">content=</span><span class="val">"#16a34a"</span><span class="tag">&gt;</span>
+<span class="tag">&lt;meta</span> <span class="attr">name=</span><span class="val">"apple-mobile-web-app-capable"</span> <span class="attr">content=</span><span class="val">"yes"</span><span class="tag">&gt;</span>
+<span class="tag">&lt;meta</span> <span class="attr">name=</span><span class="val">"apple-mobile-web-app-status-bar-style"</span> <span class="attr">content=</span><span class="val">"black-translucent"</span><span class="tag">&gt;</span>
+<span class="tag">&lt;meta</span> <span class="attr">name=</span><span class="val">"apple-mobile-web-app-title"</span> <span class="attr">content=</span><span class="val">"Green Shop"</span><span class="tag">&gt;</span>
+  </div>
+
+  <p style="font-size:14px; color:#6b7280; margin-bottom:12px">
+    Aur <code>&lt;/body&gt;</code> se pehle yeh script paste karo:
+  </p>
+
+  <div class="code-block">
+<span class="comment">&lt;!-- PWA Service Worker --&gt;</span>
+<span class="tag">&lt;script&gt;</span>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/Green-Shop-/sw.js')
+        .then(reg => console.log('✅ SW registered'))
+        .catch(err => console.log('❌ SW error:', err));
+    });
+  }
+<span class="tag">&lt;/script&gt;</span>
+  </div>
+
+  <!-- Step 3: Icons -->
+  <div class="section-title">🎨 Step 3 — Icons Banao</div>
+
+  <div class="alert alert-green">
+    ✅ Aapke paas pehle se Green Shop ka logo hai! Use <strong>192x192</strong> aur <strong>512x512</strong> size mein save karo aur <strong>icon-192.png</strong> aur <strong>icon-512.png</strong> naam se upload karo.
+  </div>
+
+  <div class="step-card">
+    <div class="step-num">💡</div>
+    <div class="step-content">
+      <h3>Free Tool Use Karo</h3>
+      <p>realfavicongenerator.net par jao → apna logo upload karo → PWA icons download karo → GitHub par upload karo</p>
+    </div>
+  </div>
+
+  <!-- Test karo -->
+  <div class="section-title">🧪 Step 4 — Test Karo</div>
+
+  <div class="step-card">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h3>Chrome mein Open Karo</h3>
+      <p>Phone mein Chrome browser se <code>akhtarsee.github.io/Green-Shop-/</code> open karo</p>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h3>Install Prompt Dekho</h3>
+      <p>Neeche ek popup aayega — <strong>"Add to Home Screen"</strong> — tap karo!</p>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h3>Done! 🎉</h3>
+      <p>Green Shop icon home screen par aa jayega — bilkul real app jaisa!</p>
+    </div>
+  </div>
+
+  <br>
+  <a class="btn" href="https://akhtarsee.github.io/Green-Shop-/" target="_blank">
+    🚀 Green Shop Open Karo
+  </a>
+
+</div>
+
+<footer>
+  Green Shop PWA — Giridih, Jharkhand 🌿<br>
+  Made with ❤️ for Md Akhtar Ansari
+</footer>
+
+</body>
+</html>
