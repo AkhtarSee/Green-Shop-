@@ -815,6 +815,8 @@ async function dbGetLeaderboard(limit = 10) {
 
     // Setup admin tap
     setupAdminTap();
+    setTimeout(setupAdminTap, 1000);
+setTimeout(setupAdminTap, 3000);
 
     // Setup race ads
     setupRaceAds();
