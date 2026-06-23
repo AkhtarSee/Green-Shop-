@@ -303,32 +303,7 @@ html, body { width:100%; height:100%; overflow:hidden; font-family:var(--font); 
 .race-header { background:var(--p-bg); padding:12px 16px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--p-border); position:sticky; top:0; z-index:50; }
 .race-header-title { font-family:var(--head); font-size:1.1rem; color:var(--p-gold); flex:1; }
 
-/* P2E Game Store */
-#screen-gstore { background:var(--p-bg); }
-.gs-tabs { display:flex; gap:0; margin:0 16px 14px; background:var(--p-card); border-radius:var(--radius-sm); padding:4px; border:1px solid var(--p-border); }
-.gs-tab { flex:1; padding:9px 4px; text-align:center; border-radius:8px; cursor:pointer; font-size:.72rem; font-weight:700; transition:.2s; color:var(--p-muted); }
-.gs-tab.active { background:rgba(240,192,64,.12); color:var(--p-gold); }
-.gs-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:0 16px; }
-.gs-item { background:var(--p-card); border:1px solid var(--p-border); border-radius:var(--radius); padding:16px; text-align:center; transition:.2s; }
-.gs-item:active { transform:scale(.97); }
-.gs-item.owned { border-color:rgba(34,214,122,.3); background:rgba(34,214,122,.04); }
-.gs-item.equipped { border-color:rgba(240,192,64,.5); background:rgba(240,192,64,.06); }
-.gs-emoji { font-size:2.6rem; display:block; margin-bottom:8px; }
-.gs-name { font-size:.82rem; font-weight:700; color:var(--p-text); margin-bottom:3px; }
-.gs-desc { font-size:.67rem; color:var(--p-muted); margin-bottom:10px; line-height:1.5; }
-.gs-cost { font-family:var(--head); font-size:.95rem; color:var(--p-gold); margin-bottom:8px; }
 
-/* Buttons */
-.btn { display:flex; align-items:center; justify-content:center; gap:6px; border:none; border-radius:var(--radius-sm); cursor:pointer; font-family:var(--font); font-weight:700; transition:.18s; }
-.btn:active { transform:scale(.97); }
-.btn-green-g { background:linear-gradient(135deg,var(--g-primary),var(--g-primary2)); color:#fff; }
-.btn-gold-p { background:linear-gradient(135deg,#f0c040,#e8a800); color:#000; }
-.btn-gp { background:linear-gradient(135deg,var(--p-green),#18a85e); color:#fff; }
-.btn-ghost-p { background:rgba(255,255,255,.07); border:1px solid var(--p-border); color:var(--p-text); }
-.btn-ghost-g { background:rgba(255,255,255,.6); border:1.5px solid var(--g-border); color:var(--g-text); }
-.btn-lg { padding:15px 20px; font-size:.95rem; width:100%; border-radius:var(--radius); }
-.btn-md { padding:11px 16px; font-size:.84rem; }
-.btn-sm { padding:8px 14px; font-size:.76rem; }
 
 /* ════════════════════════
    ADMIN PANEL
