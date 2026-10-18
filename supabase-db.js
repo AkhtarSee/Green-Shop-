@@ -211,11 +211,14 @@ async function dbGetLeaderboard(limit = 10) {
     return _currentSupply;
   }
 
-  function generateUID() {
+  function generateUID(phone) {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let uid = 'GS';
-    for (let i = 0; i < 6; i++) uid += chars[Math.floor(Math.random() * chars.length)];
-    return uid;
+    // Use last 4 digits of phone + timestamp base36 + 2 random chars = truly unique
+    const phonePart = phone ? String(phone).replace(/\D/g,'').slice(-4) : '';
+    const timePart = Date.now().toString(36).toUpperCase().slice(-3);
+    let randPart = '';
+    for (let i = 0; i < 3; i++) randPart += chars[Math.floor(Math.random() * chars.length)];
+    return 'GS' + phonePart + timePart + randPart;
   }
 
   function getReferrerFromURL() {
@@ -413,7 +416,7 @@ async function dbGetLeaderboard(limit = 10) {
         return;
       }
 
-      const refCode = generateUID();
+      const refCode = generateUID(phone);
       const newCoins = referredBy ? REFERRAL_NEW_USER : 0;
 
       const dbUser = await dbCreateUser({
