@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#00c896">
+  <meta name="description" content="GreenEarn - Grocery shopping, coins earn karo, games khelo!">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GreenEarn">
+  <title>GreenEarn</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ===========================
+     LOADING SCREEN
+=========================== -->
+<div id="loading-screen">
+  <div class="loader-logo">GreenEarn</div>
+  <div class="loader-sub">Grocery + Coins + Games</div>
+  <div class="loader-bar">
+    <div class="loader-bar-fill"></div>
+  </div>
+</div>
+
+<!-- ===========================
+     REGISTER SCREEN
+=========================== -->
+<div id="register-screen">
+  <div class="register-card">
+    <div class="register-logo">
+      <div class="logo-icon">🌿</div>
+      <h1>GreenEarn</h1>
+      <p>Grocery karo, Coins kamao, Games khelo!</p>
+    </div>
+    <form id="register-form">
+      <div class="input-group">
+        <label>Mobile Number</label>
+        <input type="tel" id="reg-phone" class="input-field" placeholder="10 digit mobile number" maxlength="10" pattern="[0-9]{10}" required>
+      </div>
+      <div class="input-group">
+        <label>Aapka Naam</label>
+        <input type="text" id="reg-name" class="input-field" placeholder="Poora naam likhein" required>
+      </div>
+      <div class="input-group">
+        <label>Referral Code (Optional)</label>
+        <input type="text" id="reg-ref" class="input-field" placeholder="Kisi ne invite kiya? Code daalo" autocomplete="off">
+        <div class="ref-note">Referral code se extra coins milenge!</div>
+      </div>
+      <button type="submit" class="btn-primary">Get Started — Free!</button>
+      <div class="welcome-bonus">🎁 Register karo aur paao 50 Welcome Coins!</div>
+    </form>
+  </div>
+</div>
+
+<!-- ===========================
+     ADMIN LOGIN
+=========================== -->
+<div id="admin-login-screen">
+  <div class="admin-login-card">
+    <h2>🔐 Admin Login</h2>
+    <p>Admin access ke liye credentials daalo</p>
+    <form id="admin-login-form">
+      <div class="input-group">
+        <label>Username</label>
+        <input type="text" id="admin-user-input" class="input-field" placeholder="Admin username" autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="admin-pass-input" class="input-field" placeholder="Admin password">
+      </div>
+      <button type="submit" class="btn-admin">Login</button>
+      <button type="button" class="btn-cancel" id="btn-cancel-admin">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===========================
+     MAIN APP
+=========================== -->
+<div id="main-app">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-logo">🌿 GreenEarn</div>
+    <div class="header-right">
+      <div class="coin-chip">
+        <span>🪙</span>
+        <span class="coin-display" id="header-coins">0</span>
+      </div>
+      <div id="admin-tap-zone">⚙️</div>
+    </div>
+  </header>
+
+  <!-- Pages -->
+
+  <!-- HOME -->
+  <section id="page-home" class="page active">
+    <div class="hero-banner">
+      <div class="hero-text">
+        <h2>Namaskar, <span id="hero-user-name">Friend</span>!</h2>
+        <p>Grocery karo, coins kamao</p>
+        <div class="hero-coins"><span>🪙</span> <span id="hero-coins">0</span> Coins</div>
+      </div>
+      <div class="hero-emoji">🛒</div>
+    </div>
+
+    <!-- Supply Banner -->
+    <div id="supply-wrap"></div>
+
+    <!-- Earn Ways -->
+    <div class="section-header">
+      <h3>💰 Coins Kamao</h3>
+    </div>
+    <div class="earn-grid">
+      <div class="earn-card" onclick="loadPage('shop')">
+        <div class="earn-icon">🛒</div>
+        <div class="earn-title">Shopping</div>
+        <div class="earn-amt">Earn coins</div>
+      </div>
+      <div class="earn-card" onclick="loadPage('games')">
+        <div class="earn-icon">🎮</div>
+        <div class="earn-title">Games</div>
+        <div class="earn-amt">Up to 20🪙</div>
+      </div>
+      <div class="earn-card" id="btn-daily-bonus">
+        <div class="earn-icon">📅</div>
+        <div class="earn-title">Daily</div>
+        <div class="earn-amt">5–10🪙/day</div>
+      </div>
+      <div class="earn-card" onclick="loadPage('profile')">
+        <div class="earn-icon">🤝</div>
+        <div class="earn-title">Referral</div>
+        <div class="earn-amt">+25–75🪙</div>
+      </div>
+      <div class="earn-card" onclick="loadPage('shop')">
+        <div class="earn-icon">🌿</div>
+        <div class="earn-title">Fresh Buy</div>
+        <div class="earn-amt">Bonus coins</div>
+      </div>
+      <div class="earn-card" onclick="loadPage('profile')">
+        <div class="earn-icon">👤</div>
+        <div class="earn-title">Profile</div>
+        <div class="earn-amt">My account</div>
+      </div>
+    </div>
+
+    <!-- Offers -->
+    <div class="section-header">
+      <h3>🔥 Aaj ke Offers</h3>
+    </div>
+    <div class="offers-scroll" id="offers-wrap"></div>
+
+    <!-- Live Stats -->
+    <div class="section-header">
+      <h3>📊 Live Stats</h3>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-users">—</div>
+        <div class="stat-label">Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-orders">—</div>
+        <div class="stat-label">Orders</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-coins">—</div>
+        <div class="stat-label">Coins Issued</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHOP -->
+  <section id="page-shop" class="page">
+    <div style="padding:12px 16px 0">
+      <input type="search" id="search-input" class="input-field" placeholder="🔍 Product search karo...">
+    </div>
+    <div class="category-scroll">
+      <div class="cat-chip active" data-cat="All">All</div>
+      <div class="cat-chip" data-cat="Vegetables">🥦 Vegetables</div>
+      <div class="cat-chip" data-cat="Fruits">🍎 Fruits</div>
+      <div class="cat-chip" data-cat="Dairy">🥛 Dairy</div>
+      <div class="cat-chip" data-cat="Grains">🌾 Grains</div>
+      <div class="cat-chip" data-cat="Oils">🫙 Oils</div>
+      <div class="cat-chip" data-cat="Spices">🌶️ Spices</div>
+      <div class="cat-chip" data-cat="Snacks">🍿 Snacks</div>
+    </div>
+    <div class="products-grid" id="products-grid">
+      <div class="empty-state" style="grid-column:span 2">
+        <div class="empty-icon">⏳</div>
+        <p>Loading products...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CART -->
+  <section id="page-cart" class="page">
+    <div style="padding:12px 16px 0;display:flex;justify-content:space-between;align-items:center">
+      <h2 style="font-size:18px;font-weight:700">🛒 My Cart</h2>
+    </div>
+    <div id="cart-container"></div>
+  </section>
+
+  <!-- GAMES -->
+  <section id="page-games" class="page">
+    <div class="games-hero">
+      <h2>🎮 Game Zone</h2>
+      <p>Khelo aur coins kamao — free ya paid mode mein!</p>
+    </div>
+    <div class="game-cards">
+      <!-- Tap Battle -->
+      <div class="game-card">
+        <div class="game-header">
+          <div class="game-icon">👆</div>
+          <div class="game-meta">
+            <h3>Tap Battle</h3>
+            <p>15 sec mein maximum tap karo</p>
+          </div>
+          <div class="game-badge free">Free</div>
+        </div>
+        <div class="game-actions">
+          <button class="btn-game-free" onclick="openTapFree()">▶ Free Play</button>
+          <button class="btn-game-paid" onclick="openTapPaid()">🪙 10 Paid Mode</button>
+        </div>
+      </div>
+      <!-- Car Race -->
+      <div class="game-card">
+        <div class="game-header">
+          <div class="game-icon">🏎️</div>
+          <div class="game-meta">
+            <h3>Car Race</h3>
+            <p>Cars se bachke aage badho</p>
+          </div>
+          <div class="game-badge free">Free</div>
+        </div>
+        <div class="game-actions">
+          <button class="btn-game-free" onclick="openRaceFree()">▶ Free Race</button>
+          <button class="btn-game-paid" onclick="openRacePaid()">🪙 10 Paid Race</button>
+        </div>
+      </div>
+    </div>
+    <div style="margin:16px;padding:14px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.15);border-radius:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--accent-gold);margin-bottom:8px">🏆 Prizes</div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.8">
+        Tap: 20+ taps → 2🪙 | 40+ → 8🪙 | 60+ → 15🪙 | 70+ → 20🪙<br>
+        Race: 100pts → 3🪙 | 300pts → 7🪙 | 500pts → 12🪙 | 800pts → 18🪙<br>
+        <span style="color:var(--accent-gold)">Paid mode = 2× coins! 🎯</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROFILE -->
+  <section id="page-profile" class="page">
+    <div class="profile-card">
+      <div class="profile-avatar">👤</div>
+      <div class="profile-name" id="profile-name">—</div>
+      <div class="profile-phone" id="profile-phone">—</div>
+      <div class="profile-coins">
+        <span>🪙</span>
+        <span class="coin-display" id="profile-coins-val">0</span>
+        <span style="font-size:12px;font-weight:400;color:rgba(255,215,0,0.7)">coins</span>
+      </div>
+    </div>
+
+    <div class="referral-box">
+      <h4>🤝 Apna Referral Share Karo</h4>
+      <div class="ref-code-row">
+        <span class="ref-code" id="profile-ref-code">—</span>
+        <button class="btn-copy" id="btn-copy-ref">Share</button>
+      </div>
+      <div class="ref-stats">
+        <div class="ref-stat-item">
+          <div class="ref-stat-val" id="profile-ref-count">0</div>
+          <div class="ref-stat-lbl">Referrals</div>
+        </div>
+        <div class="ref-stat-item">
+          <div class="ref-stat-val" id="profile-ref-earned">0</div>
+          <div class="ref-stat-lbl">Coins Earned</div>
+        </div>
+        <div class="ref-stat-item">
+          <div class="ref-stat-val" id="profile-wins">0</div>
+          <div class="ref-stat-lbl">Game Wins</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="menu-list">
+      <div class="menu-item" id="menu-orders">
+        <div class="menu-item-icon">📦</div>
+        <div class="menu-item-text">
+          <h4>My Orders</h4>
+          <p>Order history dekhein</p>
+        </div>
+        <div class="menu-item-arrow">›</div>
+      </div>
+      <div class="menu-item" id="menu-share">
+        <div class="menu-item-icon">🔗</div>
+        <div class="menu-item-text">
+          <h4>App Share Karo</h4>
+          <p>Friends ko invite karo</p>
+        </div>
+        <div class="menu-item-arrow">›</div>
+      </div>
+      <div class="menu-item">
+        <div class="menu-item-icon">💰</div>
+        <div class="menu-item-text">
+          <h4>Coin ke Baare Mein</h4>
+          <p>1🪙 = ₹1 (rate changes with supply)</p>
+        </div>
+        <div class="menu-item-arrow">›</div>
+      </div>
+      <div class="menu-item" id="menu-logout" style="border-color:rgba(255,77,109,0.2)">
+        <div class="menu-item-icon">🚪</div>
+        <div class="menu-item-text">
+          <h4 style="color:var(--accent-red)">Logout</h4>
+          <p>Account se bahar jaao</p>
+        </div>
+        <div class="menu-item-arrow">›</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-page="home">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" data-page="shop">
+      <span class="nav-icon">🛍️</span>
+      <span class="nav-label">Shop</span>
+    </button>
+    <button class="nav-item" data-page="cart" style="position:relative">
+      <span class="nav-icon">🛒</span>
+      <span class="nav-label">Cart</span>
+      <span id="cart-badge" style="display:none;position:absolute;top:4px;right:calc(50% - 18px);background:var(--accent-red);color:#fff;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center">0</span>
+    </button>
+    <button class="nav-item" data-page="games">
+      <span class="nav-icon">🎮</span>
+      <span class="nav-label">Games</span>
+    </button>
+    <button class="nav-item" data-page="profile">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">Profile</span>
+    </button>
+  </nav>
+
+</div><!-- end main-app -->
+
+<!-- ===========================
+     GAME OVERLAY (Fullscreen)
+=========================== -->
+<div id="game-overlay">
+  <div class="game-overlay-header">
+    <div class="game-overlay-title" id="game-overlay-title">Game</div>
+    <button class="btn-close-game" id="btn-close-game">✕ Exit</button>
+  </div>
+  <div id="game-canvas-area"></div>
+</div>
+
+<!-- ===========================
+     ADMIN PANEL
+=========================== -->
+<div id="admin-panel">
+  <div class="admin-header">
+    <h2>🔐 Admin Panel</h2>
+    <button class="btn-admin-close" id="btn-close-admin">✕</button>
+  </div>
+  <div class="admin-tabs">
+    <button class="admin-tab active" data-tab="stats">📊 Stats</button>
+    <button class="admin-tab" data-tab="products">🛍️ Products</button>
+    <button class="admin-tab" data-tab="orders">📦 Orders</button>
+    <button class="admin-tab" data-tab="users">👥 Users</button>
+    <button class="admin-tab" data-tab="offers">🔥 Offers</button>
+  </div>
+  <div class="admin-content">
+
+    <!-- Stats Section -->
+    <div id="admin-sec-stats" class="admin-section active">
+      <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+          <div class="admin-stat-val" id="astat-users">—</div>
+          <div class="admin-stat-lbl">Total Users</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-val" id="astat-orders">—</div>
+          <div class="admin-stat-lbl">Total Orders</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-val" id="astat-revenue">—</div>
+          <div class="admin-stat-lbl">Revenue</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-val" id="astat-coins-issued">—</div>
+          <div class="admin-stat-lbl">Coins Issued</div>
+        </div>
+      </div>
+      <div class="admin-stat-card" style="text-align:center;padding:16px">
+        <div style="font-size:13px;color:var(--text-muted)">Coins Used in Orders</div>
+        <div class="admin-stat-val" id="astat-coins-used" style="margin-top:4px">—</div>
+      </div>
+    </div>
+
+    <!-- Products Section -->
+    <div id="admin-sec-products" class="admin-section">
+      <div class="admin-form">
+        <h3>+ Naya Product Add Karo</h3>
+        <form id="admin-add-product-form">
+          <div class="form-row">
+            <input type="text" id="p-name" class="admin-input" placeholder="Product name *" required>
+            <input type="number" id="p-price" class="admin-input" placeholder="Price ₹ *" step="0.01" required>
+          </div>
+          <div class="form-row">
+            <input type="text" id="p-unit" class="admin-input" placeholder="Unit (e.g. 500g, 1kg)">
+            <input type="text" id="p-category" class="admin-input" placeholder="Category">
+          </div>
+          <div class="form-row">
+            <input type="text" id="p-emoji" class="admin-input" placeholder="Emoji (e.g. 🥦)">
+            <input type="text" id="p-img" class="admin-input" placeholder="Image URL (optional)">
+          </div>
+          <div class="form-row-1" style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="p-fresh" style="width:16px;height:16px;accent-color:var(--accent-green)">
+            <label for="p-fresh" style="font-size:13px;color:var(--text-secondary)">Fresh product hai?</label>
+          </div>
+          <button type="submit" class="btn-admin-save">Product Add Karo</button>
+        </form>
+      </div>
+      <div class="admin-table-wrap" style="overflow-x:auto">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Unit</th>
+              <th>Category</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="admin-products-tbody">
+            <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">Stats tab se start karo</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Orders Section -->
+    <div id="admin-sec-orders" class="admin-section">
+      <div class="admin-table-wrap" style="overflow-x:auto">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Phone</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="admin-orders-tbody">
+            <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">Tab click karo load ke liye</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Users Section -->
+    <div id="admin-sec-users" class="admin-section">
+      <div class="admin-table-wrap" style="overflow-x:auto">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Coins</th>
+              <th>Refs</th>
+            </tr>
+          </thead>
+          <tbody id="admin-users-tbody">
+            <tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted)">Tab click karo load ke liye</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Offers Section -->
+    <div id="admin-sec-offers" class="admin-section">
+      <div class="admin-form">
+        <h3>+ Naya Offer Add Karo</h3>
+        <form id="admin-add-offer-form">
+          <div class="form-row-1">
+            <input type="text" id="o-title" class="admin-input" placeholder="Offer title *" required>
+          </div>
+          <div class="form-row-1">
+            <input type="text" id="o-subtitle" class="admin-input" placeholder="Subtitle / description">
+          </div>
+          <div class="form-row">
+            <input type="text" id="o-badge" class="admin-input" placeholder="Badge emoji (e.g. 🔥)">
+            <input type="color" id="o-color" value="#00c896" style="width:100%;height:42px;border-radius:10px;border:1px solid var(--glass-border);background:transparent;cursor:pointer">
+          </div>
+          <button type="submit" class="btn-admin-save">Offer Add Karo</button>
+        </form>
+      </div>
+      <div id="admin-offers-list"></div>
+    </div>
+
+  </div><!-- end admin-content -->
+</div><!-- end admin-panel -->
+
+<!-- ===========================
+     MODALS
+=========================== -->
+
+<!-- Product Detail Modal -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div id="modal-product-content"></div>
+  </div>
+</div>
+
+<!-- Checkout Modal -->
+<div class="modal-overlay" id="checkout-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💳 Payment Karein</div>
+    <div class="order-info">
+      <div class="order-row">
+        <span>Items</span>
+        <span id="modal-order-items" style="font-size:11px;max-width:180px;text-align:right;color:var(--text-secondary)">—</span>
+      </div>
+      <div class="order-row">
+        <span>Subtotal</span>
+        <span id="modal-order-subtotal">—</span>
+      </div>
+      <div class="order-row" style="color:var(--accent-gold)">
+        <span>Coin Discount</span>
+        <span id="modal-order-coins">₹0</span>
+      </div>
+      <div class="order-row highlight">
+        <span>Pay Now</span>
+        <span id="modal-order-total">—</span>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;text-align:center">UPI app select karein:</div>
+    <div class="upi-options">
+      <button class="upi-btn" data-upi="gpay">
+        <span class="upi-icon">💚</span>
+        <span>Google Pay</span>
+      </button>
+      <button class="upi-btn" data-upi="phonepe">
+        <span class="upi-icon">💜</span>
+        <span>PhonePe</span>
+      </button>
+      <button class="upi-btn" data-upi="paytm">
+        <span class="upi-icon">💙</span>
+        <span>Paytm</span>
+      </button>
+      <button class="upi-btn" data-upi="bhim">
+        <span class="upi-icon">🇮🇳</span>
+        <span>BHIM UPI</span>
+      </button>
+    </div>
+    <button class="btn-cancel" style="width:100%;margin-top:4px" onclick="closeModal('checkout-modal')">Cancel</button>
+  </div>
+</div>
+
+<!-- Orders History Modal -->
+<div class="modal-overlay" id="orders-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📦 My Orders</div>
+    <div id="orders-modal-content"></div>
+    <button class="btn-cancel" style="width:100%;margin-top:16px" onclick="closeModal('orders-modal')">Close</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Scripts -->
+<script src="js/db.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
